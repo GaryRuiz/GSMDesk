@@ -91,4 +91,14 @@ fn main() {
         println!("cargo:rustc-link-lib=framework=ApplicationServices");
     }
     println!("cargo:rerun-if-changed=build.rs");
+    // Read by src/gsmdesk.rs through option_env!.
+    for var in [
+        "GSMDESK_SERVER",
+        "GSMDESK_KEY",
+        "GSMDESK_RELAY",
+        "GSMDESK_API",
+        "GSMDESK_CONN_TYPE",
+    ] {
+        println!("cargo:rerun-if-env-changed={var}");
+    }
 }

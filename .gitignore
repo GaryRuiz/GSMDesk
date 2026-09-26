@@ -56,3 +56,7 @@ vcpkg_installed
 flutter/lib/generated_plugin_registrant.dart
 libsciter.dylib
 flutter/web/
+# GSMDesk branding assets
+!flutter/assets/icon.png
+!flutter/assets/logo*.png
+!gsmdesk/branding/source/*.png

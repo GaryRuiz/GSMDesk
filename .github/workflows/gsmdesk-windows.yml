@@ -1,0 +1,222 @@
+# Builds GSMDesk for Windows x64. Based on the x64 job of flutter-build.yml.
+#
+# Server settings are baked into the client at build time. Set them as
+# repository variables (Settings > Secrets and variables > Actions > Variables):
+#   GSMDESK_SERVER  ID server (hbbs), e.g. remote.example.com   (required for production)
+#   GSMDESK_KEY     content of the server's id_ed25519.pub      (required for production)
+#   GSMDESK_RELAY   relay server (hbbr), optional
+#   GSMDESK_API     API server, optional (RustDesk Server Pro only)
+#
+# Outputs (as run artifacts, and as a GitHub release when a v* tag is pushed):
+#   GSMDesk-<version>-x86_64.exe        full app: control others, be controlled, install
+#   GSMDesk-<version>-x86_64.msi        installer for mass deployment
+#   GSMDesk-Cliente-qs-<version>.exe    customer quick-support: only receives connections,
+#                                       asks once for admin rights so UAC prompts are visible
+
+name: GSMDesk Windows
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+
+env:
+  RUST_VERSION: "1.75"
+  LLVM_VERSION: "15.0.6"
+  FLUTTER_VERSION: "3.24.5"
+  VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
+  VCPKG_COMMIT_ID: "120deac3062162151622ca4860575a33844ba10b"
+  GSMDESK_SERVER: ${{ vars.GSMDESK_SERVER }}
+  GSMDESK_KEY: ${{ vars.GSMDESK_KEY }}
+  GSMDESK_RELAY: ${{ vars.GSMDESK_RELAY }}
+  GSMDESK_API: ${{ vars.GSMDESK_API }}
+
+jobs:
+  generate-bridge:
+    uses: ./.github/workflows/bridge.yml
+
+  build-topmost-window:
+    uses: ./.github/workflows/third-party-RustDeskTempTopMostWindow.yml
+    with:
+      upload-artifact: true
+      target: windows-2022
+      configuration: Release
+      platform: x64
+      target_version: Windows10
+
+  build-windows:
+    name: build (${{ matrix.variant.id }})
+    needs: [generate-bridge, build-topmost-window]
+    runs-on: windows-2022
+    strategy:
+      fail-fast: false
+      matrix:
+        variant:
+          - { id: full, conn-type: "", msi: true }
+          - { id: cliente, conn-type: "incoming", msi: false }
+    env:
+      GSMDESK_CONN_TYPE: ${{ matrix.variant.conn-type }}
+    steps:
+      - name: Export GitHub Actions cache environment variables
+        uses: actions/github-script@d7906e4ad0b1822421a7e6a35d5ca353c962f410 # v6
+        with:
+          script: |
+            core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
+            core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
+
+      - name: Checkout source code
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          submodules: recursive
+
+      - name: Read version
+        shell: bash
+        run: echo "VERSION=$(grep -m1 '^version' Cargo.toml | cut -d'"' -f2)" >> "$GITHUB_ENV"
+
+      - name: Warn when no server is configured
+        if: env.GSMDESK_SERVER == '' || env.GSMDESK_KEY == ''
+        shell: bash
+        run: echo "::warning::GSMDESK_SERVER/GSMDESK_KEY are not set; this build uses RustDesk's public servers (development only)."
+
+      - name: Restore bridge files
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: bridge-artifact
+          path: ./
+
+      - name: Install LLVM and Clang
+        uses: KyleMayes/install-llvm-action@ebc0426251bc40c7cd31162802432c68818ab8f0 # v2.0.9
+        with:
+          version: ${{ env.LLVM_VERSION }}
+
+      - name: Install flutter
+        uses: subosito/flutter-action@2783a3f08e1baf891508463f8c6653c258246225 # v2.12.0
+        with:
+          channel: "stable"
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          architecture: x64
+
+      # https://github.com/flutter/flutter/issues/155685
+      - name: Replace engine with rustdesk custom flutter engine
+        run: |
+          flutter doctor -v
+          flutter precache --windows
+          Invoke-WebRequest -Uri https://github.com/rustdesk/engine/releases/download/main/windows-x64-release.zip -OutFile windows-x64-release.zip
+          Expand-Archive -Path windows-x64-release.zip -DestinationPath windows-x64-release
+          mv -Force windows-x64-release/*  C:/hostedtoolcache/windows/flutter/stable-${{ env.FLUTTER_VERSION }}-x64/bin/cache/artifacts/engine/windows-x64-release/
+
+      - name: Patch flutter
+        shell: bash
+        run: |
+          cp .github/patches/flutter_3.24.4_dropdown_menu_enableFilter.diff $(dirname $(dirname $(which flutter)))
+          cd $(dirname $(dirname $(which flutter)))
+          [[ "3.24.5" == ${{env.FLUTTER_VERSION}} ]] && git apply flutter_3.24.4_dropdown_menu_enableFilter.diff
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9 # v1
+        with:
+          toolchain: ${{ env.RUST_VERSION }}
+          targets: x86_64-pc-windows-msvc
+          components: "rustfmt"
+
+      - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+        with:
+          prefix-key: windows-2022
+          key: ${{ matrix.variant.id }}
+
+      - name: Setup vcpkg with Github Actions binary cache
+        uses: lukka/run-vcpkg@b1a0dd252f06b9e25b3c022a9a03bd7a427fb6a2 # v11
+        with:
+          vcpkgDirectory: C:\vcpkg
+          vcpkgGitCommitId: ${{ env.VCPKG_COMMIT_ID }}
+          doNotCache: false
+
+      - name: Install vcpkg dependencies
+        env:
+          VCPKG_DEFAULT_HOST_TRIPLET: x64-windows-static
+        shell: bash
+        run: |
+          if ! $VCPKG_ROOT/vcpkg install --triplet x64-windows-static --x-install-root="$VCPKG_ROOT/installed"; then
+            find "${VCPKG_ROOT}/" -name "*.log" | while read -r _1; do
+              echo "$_1:"; echo "======"; cat "$_1"; echo "======"; echo ""
+            done
+            exit 1
+          fi
+
+      - name: Build GSMDesk
+        run: |
+          python3 .\build.py --portable --flutter --skip-portable-pack --hwcodec --vram
+          mv ./flutter/build/windows/x64/runner/Release ./rustdesk
+          # Virtual display driver, used when the remote PC has no monitor attached.
+          Invoke-WebRequest -Uri https://github.com/rustdesk-org/rdev/releases/download/usbmmidd_v2/usbmmidd_v2.zip -OutFile usbmmidd_v2.zip
+          Expand-Archive usbmmidd_v2.zip -DestinationPath .
+          Remove-Item -Path usbmmidd_v2\Win32 -Recurse
+          Remove-Item -Path "usbmmidd_v2\deviceinstaller64.exe", "usbmmidd_v2\deviceinstaller.exe", "usbmmidd_v2\usbmmidd.bat"
+          mv -Force .\usbmmidd_v2 ./rustdesk
+          # The installer and the portable packer expect the exe to carry the app name.
+          mv ./rustdesk/rustdesk.exe ./rustdesk/GSMDesk.exe
+
+      - name: Copy Runner.res for the portable packer
+        continue-on-error: true
+        shell: bash
+        run: |
+          runner_res=$(find . -name "Runner.res" | head -n 1)
+          [ -n "$runner_res" ] && cp "$runner_res" ./libs/portable/Runner.res
+
+      - name: Download RustDeskTempTopMostWindow artifacts
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: topmostwindow-artifacts-x64
+          path: "./rustdesk"
+
+      - name: Build self-extracting executable
+        shell: bash
+        run: |
+          sed -i '/dpiAware/d' res/manifest.xml
+          pushd ./libs/portable
+          pip3 install -r requirements.txt
+          python3 ./generate.py -f ../../rustdesk/ -o . -e ../../rustdesk/GSMDesk.exe
+          popd
+          mkdir -p ./dist
+          if [ "${{ matrix.variant.id }}" == "cliente" ]; then
+            # "-qs-" in the file name turns on quick-support mode (see is_quick_support_exe).
+            mv ./target/release/rustdesk-portable-packer.exe "./dist/GSMDesk-Cliente-qs-${VERSION}.exe"
+          else
+            mv ./target/release/rustdesk-portable-packer.exe "./dist/GSMDesk-${VERSION}-x86_64.exe"
+          fi
+
+      - name: Add MSBuild to PATH
+        if: matrix.variant.msi
+        uses: microsoft/setup-msbuild@6fb02220983dee41ce7ae257b6f4d8f9bf5ed4ce # v2
+
+      - name: Prepare msi sources
+        if: matrix.variant.msi
+        shell: bash
+        run: |
+          cd ./res/msi
+          # "Add or remove programs" links point to this repo instead of RustDesk's.
+          repo="${{ github.server_url }}/${{ github.repository }}"
+          arp=$(printf '{"Contact": {"msi": "ARPCONTACT", "v": "%s"}, "HelpLink": {"msi": "ARPHELPLINK", "v": "%s/issues"}, "ReadMe": {"msi": "ARPREADME", "v": "%s"}}' "$repo" "$repo" "$repo")
+          python preprocess.py --arp -d ../../rustdesk --custom --app-name GSMDesk --manufacturer GSMDesk --custom-arp "$arp"
+
+      - name: Build msi
+        if: matrix.variant.msi
+        run: |
+          pushd ./res/msi
+          nuget restore msi.sln
+          msbuild msi.sln -p:Configuration=Release -p:Platform=x64 /p:TargetVersion=Windows10
+          $msi = Get-ChildItem ./Package/bin/*/Release/en-us/Package.msi | Select-Object -First 1
+          mv $msi.FullName "../../dist/GSMDesk-$env:VERSION-x86_64.msi"
+          popd
+
+      - name: Upload build
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: gsmdesk-windows-${{ matrix.variant.id }}
+          path: dist
+
+      - name: Publish release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 # v1
+        with:
+          files: ./dist/*
