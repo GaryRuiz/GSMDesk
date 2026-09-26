@@ -1,4 +1,5 @@
 # Servidor GSMDesk: ID (hbbs) + relé (hbbr), basado en rustdesk-server (AGPL-3.0).
+# Alternativa con Docker a instalar-servidor.sh, para un VPS dedicado.
 #
 # Puertos que hay que abrir en el firewall del VPS:
 #   TCP 21115-21119   UDP 21116

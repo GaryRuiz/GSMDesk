@@ -41,21 +41,30 @@ Ahora mismo hay un logo provisional generado con `make_placeholder.py`.
 
 ## 2. Montar el servidor
 
-Necesitas un VPS con Ubuntu (1 CPU / 1 GB basta para empezar) y los puertos
-**TCP 21115-21119** y **UDP 21116** abiertos.
+Necesitas un VPS con Ubuntu/Debian y los puertos **TCP 21115-21119** y
+**UDP 21116** abiertos. Puede ser el mismo VPS del relay de GSM Redirector:
+no comparten puertos y el instalador no toca nada más.
 
 ```bash
-# en el VPS, copiando la carpeta gsmdesk/server
-bash instalar-ubuntu.sh
+# en el VPS, como root, copiando la carpeta gsmdesk/server
+bash instalar-servidor.sh
 ```
 
-Al final muestra `GSMDESK_SERVER` (IP o dominio) y `GSMDESK_KEY` (la clave pública).
-**Guarda una copia de `data/`**: si pierdes la clave privada, todos los GSMDesk ya
-instalados dejan de conectar.
+Instala `rustdesk-server` como servicios systemd (`rustdesk-hbbs` y
+`rustdesk-hbbr`), sin Docker. Al final muestra la IP y `GSMDESK_KEY` (la clave pública).
+**Guarda una copia de `/var/lib/rustdesk-server/id_ed25519*`**: si pierdes la
+clave privada, todos los GSMDesk ya instalados dejan de conectar.
+
+Para `GSMDESK_SERVER` es mejor usar un **subdominio** (por ejemplo
+`desk.mundogsm.net`, un registro A que apunte al VPS) que la IP directa. Así, si
+algún día cambias de VPS, basta con mover el subdominio y copiar la clave; los
+GSMDesk ya instalados siguen funcionando sin recompilar.
+
+`docker-compose.yml` queda como alternativa para un VPS dedicado con Docker.
 
 ## 3. Compilar para Windows (GitHub Actions)
 
-1. Sube este repositorio a GitHub (rama `gsmdesk`).
+1. El repositorio es <https://github.com/GaryRuiz/GSMDesk> (rama `main`).
 2. En *Settings → Secrets and variables → Actions → Variables* crea:
    - `GSMDESK_SERVER`: IP o dominio del VPS.
    - `GSMDESK_KEY`: el contenido de `data/id_ed25519.pub`.
@@ -74,8 +83,9 @@ RustDesk. Sirve solo para pruebas.
 
 ## 4. Traer actualizaciones de RustDesk
 
+El remoto `upstream` ya apunta a RustDesk y `origin` a GaryRuiz/GSMDesk.
+
 ```bash
-git remote add upstream https://github.com/rustdesk/rustdesk.git   # solo la primera vez
 git fetch upstream --tags
 git merge 1.5.0            # la etiqueta estable nueva
 git submodule update --init
@@ -83,6 +93,11 @@ git submodule update --init
 
 Actualiza también `VCPKG_COMMIT_ID` y las versiones del principio de
 `.github/workflows/gsmdesk-windows.yml` con las de `flutter-build.yml`.
+
+Se borraron `flutter-nightly.yml`, `flutter-tag.yml` y `fdroid.yml` (publicaban
+versiones con el nombre de RustDesk cada noche o con cada etiqueta), además de
+`dependabot.yml` y `FUNDING.yml`. Si un merge los vuelve a traer, bórralos otra vez
+con `git rm`.
 
 ## Obligaciones de la licencia (AGPL-3.0)
 
