@@ -53,6 +53,8 @@ class _DesktopHomePageState extends State<DesktopHomePage>
 
   final RxBool _editHover = false.obs;
   final RxBool _block = false.obs;
+  // GSMDesk: whether a permanent password allows access without approval.
+  final RxBool _permanentPasswordSet = false.obs;
 
   final GlobalKey _childKey = GlobalKey();
 
@@ -132,7 +134,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     return ChangeNotifierProvider.value(
       value: gFFI.serverModel,
       child: Container(
-        width: isIncomingOnly ? 280.0 : 200.0,
+        width: isIncomingOnly ? 280.0 : 240.0,
         color: Theme.of(context).colorScheme.background,
         child: Stack(
           children: [
@@ -292,6 +294,9 @@ class _DesktopHomePageState extends State<DesktopHomePage>
   }
 
   buildPasswordBoard2(BuildContext context, ServerModel model) {
+    if (model.verificationMethod == kUsePermanentPassword) {
+      return buildAccessCard(context);
+    }
     RxBool refreshHover = false.obs;
     RxBool editHover = false.obs;
     final textColor = Theme.of(context).textTheme.titleLarge?.color;
@@ -389,30 +394,121 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     );
   }
 
-  /// GSMDesk: copies the ID and the one-time password in one go, ready to be
-  /// pasted into a chat for the technician.
+  /// GSMDesk: copies the ID (and the one-time password, when one is in use)
+  /// in one go, ready to be pasted into a chat for the technician.
   Widget buildCopyIdPasswordButton(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(left: 20, right: 16, bottom: 10),
-      width: double.infinity,
-      child: ElevatedButton.icon(
-        icon: const Icon(Icons.copy, size: 16),
-        label: Text(translate('Copy ID and password')),
-        onPressed: () {
-          final model = gFFI.serverModel;
-          final showOneTime = model.approveMode != 'click' &&
-              model.verificationMethod != kUsePermanentPassword;
-          final lines = [
-            bind.mainGetAppNameSync(),
-            '${translate("ID")}: ${model.serverId.text}',
-            if (showOneTime && model.serverPasswd.text.isNotEmpty)
-              '${translate("Password")}: ${model.serverPasswd.text}',
-          ];
-          Clipboard.setData(ClipboardData(text: lines.join('\n')));
-          showToast(translate('Copied'));
-        },
-      ),
+    return ChangeNotifierProvider.value(
+      value: gFFI.serverModel,
+      child: Consumer<ServerModel>(builder: (context, model, child) {
+        final showOneTime = model.approveMode != 'click' &&
+            model.verificationMethod != kUsePermanentPassword;
+        return Container(
+          margin: const EdgeInsets.only(left: 20, right: 16, bottom: 10),
+          width: double.infinity,
+          height: 38,
+          child: ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+            ),
+            icon: const Icon(Icons.copy, size: 16),
+            label: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(translate(
+                  showOneTime ? 'Copy ID and password' : 'Copy ID')),
+            ),
+            onPressed: () {
+              final lines = [
+                bind.mainGetAppNameSync(),
+                '${translate("ID")}: ${model.serverId.text}',
+                if (showOneTime && model.serverPasswd.text.isNotEmpty)
+                  '${translate("Password")}: ${model.serverPasswd.text}',
+              ];
+              Clipboard.setData(ClipboardData(text: lines.join('\n')));
+              showToast(translate('Copied'));
+            },
+          ),
+        );
+      }),
     );
+  }
+
+  /// GSMDesk: replaces the one-time password box. Explains whether incoming
+  /// connections need approval and lets the user set or remove the permanent
+  /// password that allows access without approval.
+  Widget buildAccessCard(BuildContext context) {
+    final textColor = Theme.of(context).textTheme.titleLarge?.color;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Obx(() {
+      final unattended = _permanentPasswordSet.value;
+      return Container(
+        margin: const EdgeInsets.only(left: 20, right: 16, top: 13, bottom: 13),
+        padding: const EdgeInsets.fromLTRB(12, 10, 12, 6),
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: isDark
+              ? Colors.white.withOpacity(0.05)
+              : Colors.black.withOpacity(0.03),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: MyTheme.accent.withOpacity(0.35)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(unattended ? Icons.key : Icons.touch_app_outlined,
+                    size: 18, color: MyTheme.accent),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    translate(unattended
+                        ? 'gsm-access-password-title'
+                        : 'gsm-access-click-title'),
+                    style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: textColor),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              translate(unattended
+                  ? 'gsm-access-password-tip'
+                  : 'gsm-access-click-tip'),
+              style: TextStyle(
+                  fontSize: 12, height: 1.4, color: textColor?.withOpacity(0.7)),
+            ),
+            if (!bind.isDisableSettings())
+              Wrap(
+                spacing: 4,
+                children: [
+                  TextButton(
+                    onPressed: () => setPasswordDialog(
+                        notEmptyCallback: () =>
+                            _permanentPasswordSet.value = true),
+                    child: Text(translate(
+                        unattended ? 'Change Password' : 'gsm-create-password')),
+                  ),
+                  if (unattended)
+                    TextButton(
+                      onPressed: () async {
+                        if (await bind.mainSetPermanentPasswordWithResult(
+                            password: '')) {
+                          _permanentPasswordSet.value = false;
+                          showToast(translate('gsm-password-removed'));
+                        }
+                      },
+                      child: Text(translate('gsm-remove-password')),
+                    ),
+                ],
+              ),
+          ],
+        ),
+      );
+    });
   }
 
   buildTip(BuildContext context) {
@@ -630,18 +726,17 @@ class _DesktopHomePageState extends State<DesktopHomePage>
       children: [
         Container(
           margin: EdgeInsets.fromLTRB(
-              0, marginTop, 0, bind.isIncomingOnly() ? marginTop : 0),
+              16, marginTop, 16, bind.isIncomingOnly() ? marginTop : 16),
           child: Container(
+              // GSMDesk: logo gradient instead of upstream's pink.
               decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
                   gradient: LinearGradient(
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
-                colors: [
-                  Color.fromARGB(255, 226, 66, 188),
-                  Color.fromARGB(255, 244, 114, 124),
-                ],
-              )),
-              padding: EdgeInsets.all(20),
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [MyTheme.brandBlue, MyTheme.brandGreen],
+                  )),
+              padding: EdgeInsets.all(16),
               child: Column(
                   mainAxisAlignment: MainAxisAlignment.start,
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -666,7 +761,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                                 color: Colors.white,
                                 fontWeight: FontWeight.normal,
                                 fontSize: 13),
-                          ).marginOnly(bottom: 20)
+                          ).marginOnly(bottom: 14)
                       ] +
                       (btnText.isNotEmpty
                           ? <Widget>[
@@ -680,7 +775,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                                       text: translate(btnText),
                                       textColor: Colors.white,
                                       borderColor: Colors.white,
-                                      textSize: 20,
+                                      textSize: 16,
                                       radius: 10,
                                       onTap: onPressed,
                                     )
@@ -726,6 +821,8 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     super.initState();
     _updateTimer = periodic_immediate(const Duration(seconds: 1), () async {
       await gFFI.serverModel.fetchID();
+      _permanentPasswordSet.value =
+          (await bind.mainGetCommon(key: "permanent-password-set")) == "true";
       final error = await bind.mainGetError();
       if (systemError != error) {
         systemError = error;

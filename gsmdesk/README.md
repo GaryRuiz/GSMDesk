@@ -14,7 +14,10 @@ RustDesk sin conflictos.
 
 | Archivo | Cambio |
 |---|---|
-| `src/gsmdesk.rs` | Nombre "GSMDesk", servidor propio fijado al compilar y valores por defecto para el técnico (pantalla ajustada a la ventana y centrada, una ventana por conexión) |
+| `src/gsmdesk.rs` | Nombre "GSMDesk", servidor propio fijado al compilar y valores por defecto: aceptar conexiones con clic o con contraseña fija opcional (sin contraseña de un solo uso), pantalla ajustada a la ventana y centrada, una ventana por conexión |
+| `flutter/lib/desktop/pages/desktop_home_page.dart` | Botón "Copiar ID", tarjeta de acceso (crear/quitar contraseña fija), aviso de instalación con los colores del logo |
+| `flutter/lib/common.dart` | Color de marca turquesa en lugar del azul de RustDesk |
+| `src/lang/es.rs`, `src/lang/en.rs` | Textos nuevos de GSMDesk y dos textos reescritos (`desk_tip`, `install_tip`) |
 | `src/common.rs`, `src/lib.rs` | Llaman a `gsmdesk::apply()` al arrancar |
 | `build.rs` | Recompila si cambian las variables `GSMDESK_*` |
 | `flutter/windows/runner/Runner.rc`, `Cargo.toml`, `libs/portable/Cargo.toml` | Nombre y copyright en las propiedades del `.exe` |

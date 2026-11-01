@@ -3,7 +3,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
     [
         ("Status", "Estado"),
         ("Your Desktop", "Tu escritorio"),
-        ("desk_tip", "Puedes acceder a tu escritorio con esta ID y contraseña."),
+        ("desk_tip", "Comparte este ID con tu técnico para recibir asistencia."),
         ("Password", "Contraseña"),
         ("Ready", "Listo"),
         ("Established", "Establecido"),
@@ -145,7 +145,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("Failed to make direct connection to remote desktop", "No se pudo establecer la conexión directa con el escritorio remoto"),
         ("Set Password", "Configurar la contraseña"),
         ("OS Password", "Contraseña del sistema operativo"),
-        ("install_tip", "Debido al Control de cuentas de usuario, es posible que RustDesk no funcione correctamente como escritorio remoto. Para evitar este problema, haga clic en el botón de abajo para instalar RustDesk a nivel de sistema."),
+        ("install_tip", "Instala GSMDesk para que se inicie con Windows y esté siempre disponible, aunque no lo abras."),
         ("Click to upgrade", "Clic para actualizar"),
         ("Configure", "Configurar"),
         ("config_acc", "Para controlar su escritorio desde el exterior, debe otorgar permiso a RustDesk de \"Accesibilidad\"."),
@@ -766,5 +766,14 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("#{} monitor", "Monitor {}"),
         ("conn-e2ee-unavailable-tip", "No se pudo verificar el cifrado de extremo a extremo.\nEs posible que el dispositivo remoto aún se esté configurando. Inténtelo de nuevo más tarde.\nSi esto sigue ocurriendo, es posible que el servidor no sea de confianza.\n¿Continuar de todos modos?"),
         ("Copy ID and password", "Copiar ID y contraseña"),
+        // GSMDesk
+        ("Copy ID", "Copiar ID"),
+        ("gsm-access-click-title", "Tendrás que aceptar"),
+        ("gsm-access-click-tip", "Cuando un técnico se conecte, aparecerá un aviso para que aceptes o rechaces la conexión."),
+        ("gsm-access-password-title", "Acceso sin aceptar activado"),
+        ("gsm-access-password-tip", "Quien tenga tu contraseña podrá conectarse sin que tengas que aceptar."),
+        ("gsm-create-password", "Crear contraseña"),
+        ("gsm-remove-password", "Quitar contraseña"),
+        ("gsm-password-removed", "Contraseña quitada: ahora tendrás que aceptar cada conexión."),
     ].iter().cloned().collect();
 }

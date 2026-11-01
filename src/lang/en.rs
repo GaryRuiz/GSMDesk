@@ -1,7 +1,7 @@
 lazy_static::lazy_static! {
 pub static ref T: std::collections::HashMap<&'static str, &'static str> =
     [
-        ("desk_tip", "Your desktop can be accessed with this ID and password."),
+        ("desk_tip", "Share this ID with your technician to get support."),
         ("connecting_status", "Connecting to the RustDesk network..."),
         ("not_ready_status", "Not ready. Please check your connection"),
         ("ID/Relay Server", "ID/Relay server"),
@@ -33,7 +33,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("Insert Lock", "Insert lock"),
         ("Set Password", "Set password"),
         ("OS Password", "OS password"),
-        ("install_tip", "Due to UAC, RustDesk can not work properly as the remote side in some cases. To avoid UAC, please click the button below to install RustDesk to the system."),
+        ("install_tip", "Install GSMDesk so it starts with Windows and is always available, even when closed."),
         ("config_acc", "In order to control your Desktop remotely, you need to grant RustDesk \"Accessibility\" permissions."),
         ("config_screen", "In order to access your Desktop remotely, you need to grant RustDesk \"Screen Recording\" permissions."),
         ("Installation Path", "Installation path"),
@@ -279,6 +279,14 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("wayland-soft-keyboard-input-label", "Soft keyboard input"),
         ("wayland-keyboard-input-reset-choice-tip", "Reset keyboard input choice"),
         ("remember-wayland-keyboard-choice-tip", "Don't ask again for this remote computer"),
-        ("conn-e2ee-unavailable-tip", "Could not verify end-to-end encryption.\nThe remote device may still be setting up. Try again later.\nIf this keeps happening, the server may be untrusted.\nContinue anyway?")
+        ("conn-e2ee-unavailable-tip", "Could not verify end-to-end encryption.\nThe remote device may still be setting up. Try again later.\nIf this keeps happening, the server may be untrusted.\nContinue anyway?"),
+        // GSMDesk
+        ("gsm-access-click-title", "You will be asked to accept"),
+        ("gsm-access-click-tip", "When a technician connects, you will be asked to accept or reject the connection."),
+        ("gsm-access-password-title", "Unattended access enabled"),
+        ("gsm-access-password-tip", "Anyone with your password can connect without your approval."),
+        ("gsm-create-password", "Create password"),
+        ("gsm-remove-password", "Remove password"),
+        ("gsm-password-removed", "Password removed: connections now need your approval."),
     ].iter().cloned().collect();
 }

@@ -56,6 +56,18 @@ pub fn apply() {
     }
     drop(overwrite);
 
+    // Access model: incoming connections must be accepted with a click, unless
+    // the user has set a permanent password, which then lets a technician in
+    // without approval. No one-time password: it changed after every session,
+    // which made "remember password" useless on the technician's side.
+    let mut settings = config::DEFAULT_SETTINGS.write().unwrap();
+    settings.insert(keys::OPTION_APPROVE_MODE.to_owned(), "password-click".to_owned());
+    settings.insert(
+        keys::OPTION_VERIFICATION_METHOD.to_owned(),
+        "use-permanent-password".to_owned(),
+    );
+    drop(settings);
+
     // Defaults for the technician; each one can still be changed in the UI.
     let mut display = config::DEFAULT_DISPLAY_SETTINGS.write().unwrap();
     // Fit the remote screen to the window, centered. Upstream's default is 1:1
