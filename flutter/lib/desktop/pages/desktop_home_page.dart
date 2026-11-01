@@ -786,8 +786,8 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     }
     final textColor = Theme.of(context).textTheme.bodyMedium?.color;
     return Container(
-      width: 250,
-      padding: const EdgeInsets.fromLTRB(18, 20, 18, 18),
+      width: 220,
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 18),
       decoration: BoxDecoration(
         color: MyTheme.gsmCard(context),
         borderRadius: BorderRadius.circular(13),

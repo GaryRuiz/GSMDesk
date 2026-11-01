@@ -2146,7 +2146,12 @@ Future<bool> restoreWindowPosition(WindowType type,
     }
   }
 
-  final size = await _adjustRestoreMainWindowSize(lpos.width, lpos.height);
+  var size = await _adjustRestoreMainWindowSize(lpos.width, lpos.height);
+  // GSMDesk: the main window needs about 900 px for the install card to sit
+  // next to "Control remote desktop"; narrower windows wrap it below.
+  if (type == WindowType.Main && !bind.isIncomingOnly() && size.width < 900) {
+    size = Size(900, size.height);
+  }
   final offsetLeftTop = await _adjustRestoreMainWindowOffset(
     lpos.offsetWidth,
     lpos.offsetHeight,
