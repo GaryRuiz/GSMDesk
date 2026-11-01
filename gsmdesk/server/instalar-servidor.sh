@@ -37,9 +37,21 @@ if command -v ufw >/dev/null 2>&1 && ufw status | grep -q "Status: active"; then
   echo "== Abriendo puertos en ufw"
   ufw allow 21115:21119/tcp
   ufw allow 21116/udp
-else
-  echo "== ufw no está activo: abre TCP 21115-21119 y UDP 21116 en el panel del proveedor si tiene firewall."
+elif iptables -S INPUT 2>/dev/null | grep -q -- "-j REJECT"; then
+  # Las imágenes Ubuntu de Oracle Cloud traen iptables que rechaza todo salvo SSH.
+  echo "== Abriendo puertos en iptables"
+  iptables -C INPUT -p tcp -m multiport --dports 21115:21119 -j ACCEPT 2>/dev/null \
+    || iptables -I INPUT 1 -p tcp -m multiport --dports 21115:21119 -j ACCEPT
+  iptables -C INPUT -p udp --dport 21116 -j ACCEPT 2>/dev/null \
+    || iptables -I INPUT 1 -p udp --dport 21116 -j ACCEPT
+  if command -v netfilter-persistent >/dev/null 2>&1; then
+    netfilter-persistent save
+  else
+    echo "AVISO: no hay netfilter-persistent; las reglas se perderán al reiniciar."
+  fi
 fi
+echo "== Si el proveedor tiene firewall en su panel (Oracle: Security List de la VCN),"
+echo "   abre ahí también TCP 21115-21119 y UDP 21116."
 
 echo "== Esperando la clave del servidor"
 for _ in $(seq 1 30); do
