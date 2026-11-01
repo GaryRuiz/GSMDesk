@@ -21,6 +21,7 @@
 use hbb_common::config::{self, keys};
 
 pub const APP_NAME: &str = "GSMDesk";
+#[cfg(target_os = "macos")]
 const ORG: &str = "com.gsmdesk";
 
 const SERVER: Option<&str> = option_env!("GSMDESK_SERVER");
@@ -33,7 +34,11 @@ const CONN_TYPE: Option<&str> = option_env!("GSMDESK_CONN_TYPE");
 /// every entry point. It is idempotent, so calling it more than once is fine.
 pub fn apply() {
     *config::APP_NAME.write().unwrap() = APP_NAME.to_owned();
-    *config::ORG.write().unwrap() = ORG.to_owned();
+    // `ORG` only exists on macOS, where it forms the bundle identifier.
+    #[cfg(target_os = "macos")]
+    {
+        *config::ORG.write().unwrap() = ORG.to_owned();
+    }
 
     // Override settings win over both the user's config and the defaults,
     // and the UI shows them as locked, so customers cannot point GSMDesk
