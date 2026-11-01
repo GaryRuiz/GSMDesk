@@ -93,6 +93,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
       buildTip(context),
       if (!isOutgoingOnly) buildIDBoard(context),
       if (!isOutgoingOnly) buildPasswordBoard(context),
+      if (!isOutgoingOnly) buildCopyIdPasswordButton(context),
       FutureBuilder<Widget>(
         future: Future.value(
             Obx(() => buildHelpCards(stateGlobal.updateUrl.value))),
@@ -384,6 +385,32 @@ class _DesktopHomePageState extends State<DesktopHomePage>
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  /// GSMDesk: copies the ID and the one-time password in one go, ready to be
+  /// pasted into a chat for the technician.
+  Widget buildCopyIdPasswordButton(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(left: 20, right: 16, bottom: 10),
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        icon: const Icon(Icons.copy, size: 16),
+        label: Text(translate('Copy ID and password')),
+        onPressed: () {
+          final model = gFFI.serverModel;
+          final showOneTime = model.approveMode != 'click' &&
+              model.verificationMethod != kUsePermanentPassword;
+          final lines = [
+            bind.mainGetAppNameSync(),
+            '${translate("ID")}: ${model.serverId.text}',
+            if (showOneTime && model.serverPasswd.text.isNotEmpty)
+              '${translate("Password")}: ${model.serverPasswd.text}',
+          ];
+          Clipboard.setData(ClipboardData(text: lines.join('\n')));
+          showToast(translate('Copied'));
+        },
       ),
     );
   }
