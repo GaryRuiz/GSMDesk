@@ -25,6 +25,7 @@ RustDesk sin conflictos.
 | `libs/portable/src/main.rs` | Carpeta temporal `gsmdesk` en vez de `rustdesk` |
 | `res/*`, `flutter/assets/*`, `flutter/windows/runner/resources/*` | Iconos y logos |
 | `.github/workflows/gsmdesk-windows.yml` | Compilación de Windows en GitHub |
+| `.github/workflows/gsmdesk-server.yml`, `gsmdesk/server/p2p-*.patch` | Servidor `hbbs` parcheado para P2P por UDP/IPv6 |
 | `gsmdesk/` | Esta carpeta: marca, servidor y documentación |
 
 Al llamarse "GSMDesk", RustDesk activa solo su modo de "cliente personalizado":
@@ -41,7 +42,7 @@ Al llamarse "GSMDesk", RustDesk activa solo su modo de "cliente personalizado":
 2. Ejecuta `python gsmdesk/branding/apply_branding.py`.
 3. Haz commit de los archivos que cambien.
 
-Ahora mismo hay un logo provisional generado con `make_placeholder.py`.
+El ícono actual lo dibuja `make_icon.py` (cuadro rojo metálico como GSM Redirector, monitor y teléfono con cursor). Para regenerarlo: `python gsmdesk/branding/make_icon.py` y luego `apply_branding.py`.
 
 ## 2. Montar el servidor
 
@@ -66,6 +67,28 @@ GSMDesk ya instalados siguen funcionando sin recompilar.
 
 `docker-compose.yml` queda como alternativa para un VPS dedicado con Docker.
 
+### Conexión directa (P2P)
+
+GSMDesk intenta primero una conexión directa entre los dos PCs (P2P por UDP y por
+IPv6) y solo usa el relé del VPS si no se puede, igual que GSM Redirector.
+
+El `rustdesk-server` original **no** reenvía los datos que hacen falta para el P2P
+por UDP/IPv6, así que casi todo terminaba pasando por el relé. Por eso usamos un
+`hbbs` parcheado:
+
+- `gsmdesk/server/p2p-hbbs.patch` y `p2p-proto.patch`: los cambios (unas 35 líneas).
+- `.github/workflows/gsmdesk-server.yml`: lo compila (*Actions → GSMDesk server*).
+
+Para instalarlo en el VPS, descarga el artefacto `gsmdesk-hbbs` y:
+
+```bash
+scp hbbs ubuntu@IP_DEL_VPS:/tmp/hbbs
+ssh ubuntu@IP_DEL_VPS 'sudo cp /usr/bin/hbbs /usr/bin/hbbs.orig && sudo install -m 755 /tmp/hbbs /usr/bin/hbbs && sudo systemctl restart rustdesk-hbbs'
+```
+
+Para volver al original: `sudo cp /usr/bin/hbbs.orig /usr/bin/hbbs && sudo systemctl restart rustdesk-hbbs`.
+En `/var/log/rustdesk-server/hbbr.log` se ven las conexiones que siguen usando el relé.
+
 ## 3. Compilar para Windows (GitHub Actions)
 
 1. El repositorio es <https://github.com/GaryRuiz/GSMDesk> (rama `main`).
@@ -74,11 +97,10 @@ GSMDesk ya instalados siguen funcionando sin recompilar.
    - `GSMDESK_KEY`: el contenido de `data/id_ed25519.pub`.
 3. En *Actions → GSMDesk Windows → Run workflow*. Tarda unos 45-60 minutos.
 4. Descarga los archivos desde la ejecución:
-   - `GSMDesk-<versión>-x86_64.exe`: la app completa (técnico, o para instalar en el PC del cliente).
+   - `GSMDesk.exe`: la app, como AnyDesk. El mismo archivo sirve para el técnico y
+     para el cliente: recibe conexiones, conecta a otros y funciona sin instalar.
+     Desde la ventana principal se puede instalar para que arranque con Windows.
    - `GSMDesk-<versión>-x86_64.msi`: instalador para desplegar en muchos PCs.
-   - `GSMDesk-Cliente-qs-<versión>.exe`: versión para el cliente. Solo recibe
-     conexiones y al abrirse pide permisos de administrador una vez, para que el
-     técnico vea y acepte las ventanas de UAC sin tener que instalar nada.
 
 Si subes una etiqueta `v1.4.9-gsm1` (por ejemplo), se crea además una *Release* con esos archivos.
 

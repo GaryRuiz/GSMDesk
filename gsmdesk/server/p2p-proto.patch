@@ -1,0 +1,44 @@
+diff --git a/protos/rendezvous.proto b/protos/rendezvous.proto
+index b9b8ed7..da6d389 100644
+--- a/protos/rendezvous.proto
++++ b/protos/rendezvous.proto
+@@ -23,12 +23,20 @@ message PunchHoleRequest {
+   ConnType conn_type = 4;
+   string token = 5;
+   string version = 6;
++  int32 udp_port = 7;
++  bool force_relay = 8;
++  int32 upnp_port = 9;
++  bytes socket_addr_v6 = 10;
+ }
+ 
+ message PunchHole { 
+   bytes socket_addr = 1;
+   string relay_server = 2;
+   NatType nat_type = 3;
++  int32 udp_port = 4;
++  bool force_relay = 5;
++  int32 upnp_port = 6;
++  bytes socket_addr_v6 = 7;
+ }
+ 
+ message TestNatRequest {
+@@ -53,6 +61,8 @@ message PunchHoleSent {
+   string relay_server = 3;
+   NatType nat_type = 4;
+   string version = 5;
++  int32 upnp_port = 6;
++  bytes socket_addr_v6 = 7;
+ }
+ 
+ message RegisterPk {
+@@ -93,6 +103,9 @@ message PunchHoleResponse {
+   }
+   string other_failure = 7;
+   int32 feedback = 8;
++  bool is_udp = 9;
++  int32 upnp_port = 10;
++  bytes socket_addr_v6 = 11;
+ }
+ 
+ message ConfigUpdate {

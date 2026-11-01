@@ -8,10 +8,9 @@
 #   GSMDESK_API     API server, optional (RustDesk Server Pro only)
 #
 # Outputs (as run artifacts, and as a GitHub release when a v* tag is pushed):
-#   GSMDesk-<version>-x86_64.exe        full app: control others, be controlled, install
-#   GSMDesk-<version>-x86_64.msi        installer for mass deployment
-#   GSMDesk-Cliente-qs-<version>.exe    customer quick-support: only receives connections,
-#                                       asks once for admin rights so UAC prompts are visible
+#   GSMDesk.exe                   the one app, like AnyDesk: receives and makes connections,
+#                                 runs without installing and can install itself
+#   GSMDesk-<version>-x86_64.msi  installer for mass deployment
 
 name: GSMDesk Windows
 
@@ -45,17 +44,9 @@ jobs:
       target_version: Windows10
 
   build-windows:
-    name: build (${{ matrix.variant.id }})
+    name: build
     needs: [generate-bridge, build-topmost-window]
     runs-on: windows-2022
-    strategy:
-      fail-fast: false
-      matrix:
-        variant:
-          - { id: full, conn-type: "", msi: true }
-          - { id: cliente, conn-type: "incoming", msi: false }
-    env:
-      GSMDESK_CONN_TYPE: ${{ matrix.variant.conn-type }}
     steps:
       - name: Export GitHub Actions cache environment variables
         uses: actions/github-script@d7906e4ad0b1822421a7e6a35d5ca353c962f410 # v6
@@ -122,7 +113,6 @@ jobs:
       - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
         with:
           prefix-key: windows-2022
-          key: ${{ matrix.variant.id }}
 
       - name: Setup vcpkg with Github Actions binary cache
         uses: lukka/run-vcpkg@b1a0dd252f06b9e25b3c022a9a03bd7a427fb6a2 # v11
@@ -178,19 +168,12 @@ jobs:
           python3 ./generate.py -f ../../rustdesk/ -o . -e ../../rustdesk/GSMDesk.exe
           popd
           mkdir -p ./dist
-          if [ "${{ matrix.variant.id }}" == "cliente" ]; then
-            # "-qs-" in the file name turns on quick-support mode (see is_quick_support_exe).
-            mv ./target/release/rustdesk-portable-packer.exe "./dist/GSMDesk-Cliente-qs-${VERSION}.exe"
-          else
-            mv ./target/release/rustdesk-portable-packer.exe "./dist/GSMDesk-${VERSION}-x86_64.exe"
-          fi
+          mv ./target/release/rustdesk-portable-packer.exe ./dist/GSMDesk.exe
 
       - name: Add MSBuild to PATH
-        if: matrix.variant.msi
         uses: microsoft/setup-msbuild@6fb02220983dee41ce7ae257b6f4d8f9bf5ed4ce # v2
 
       - name: Prepare msi sources
-        if: matrix.variant.msi
         shell: bash
         run: |
           cd ./res/msi
@@ -200,7 +183,6 @@ jobs:
           python preprocess.py --arp -d ../../rustdesk --custom --app-name GSMDesk --manufacturer GSMDesk --custom-arp "$arp"
 
       - name: Build msi
-        if: matrix.variant.msi
         run: |
           pushd ./res/msi
           nuget restore msi.sln
@@ -212,7 +194,7 @@ jobs:
       - name: Upload build
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: gsmdesk-windows-${{ matrix.variant.id }}
+          name: gsmdesk-windows
           path: dist
 
       - name: Publish release

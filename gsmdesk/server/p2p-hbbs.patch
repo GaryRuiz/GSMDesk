@@ -1,0 +1,59 @@
+diff --git a/src/rendezvous_server.rs b/src/rendezvous_server.rs
+index dff45eb..ac9d3a8 100644
+--- a/src/rendezvous_server.rs
++++ b/src/rendezvous_server.rs
+@@ -431,6 +431,16 @@ impl RendezvousServer {
+                 Some(rendezvous_message::Union::PunchHoleSent(phs)) => {
+                     self.handle_hole_sent(phs, addr, Some(socket)).await?;
+                 }
++                Some(rendezvous_message::Union::TestNatRequest(_)) => {
++                    // GSMDesk: UDP NAT test. Clients use the reported port as their
++                    // public UDP port for hole punching (PunchHoleRequest.udp_port).
++                    let mut msg_out = RendezvousMessage::new();
++                    msg_out.set_test_nat_response(TestNatResponse {
++                        port: addr.port() as _,
++                        ..Default::default()
++                    });
++                    socket.send(&msg_out, addr).await?;
++                }
+                 Some(rendezvous_message::Union::LocalAddr(la)) => {
+                     self.handle_local_addr(la, addr, Some(socket)).await?;
+                 }
+@@ -624,17 +634,20 @@ impl RendezvousServer {
+             socket_addr: AddrMangle::encode(addr).into(),
+             pk: self.get_pk(&phs.version, phs.id).await,
+             relay_server: phs.relay_server.clone(),
++            // GSMDesk: B answering over UDP means it is punching a UDP hole, so A
++            // must do the same towards `socket_addr`; also pass B's IPv6/UPnP info.
++            is_udp: socket.is_some(),
++            upnp_port: phs.upnp_port,
++            socket_addr_v6: phs.socket_addr_v6.clone(),
+             ..Default::default()
+         };
+         if let Ok(t) = phs.nat_type.enum_value() {
+             p.set_nat_type(t);
+         }
+         msg_out.set_punch_hole_response(p);
+-        if let Some(socket) = socket {
+-            socket.send(&msg_out, addr_a).await?;
+-        } else {
+-            self.send_to_tcp(msg_out, addr_a).await;
+-        }
++        // GSMDesk: A always waits for the answer on its TCP connection (UDP
++        // PunchHoleRequest is unsupported), even when B answered over UDP.
++        self.send_to_tcp(msg_out, addr_a).await;
+         Ok(())
+     }
+ 
+@@ -767,6 +780,11 @@ impl RendezvousServer {
+                     socket_addr,
+                     nat_type: ph.nat_type,
+                     relay_server,
++                    // GSMDesk: forward what clients need for UDP/IPv6 hole punching.
++                    udp_port: ph.udp_port,
++                    force_relay: ph.force_relay,
++                    upnp_port: ph.upnp_port,
++                    socket_addr_v6: ph.socket_addr_v6.clone(),
+                     ..Default::default()
+                 });
+             }

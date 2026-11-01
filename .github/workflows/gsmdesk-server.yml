@@ -1,0 +1,61 @@
+# Builds the GSMDesk ID server: rustdesk-server's hbbs with gsmdesk/server/p2p-*.patch.
+#
+# Stock rustdesk-server does not forward the fields clients need for UDP and IPv6
+# hole punching, so every connection that a TCP punch cannot open goes through
+# the relay. The patches make hbbs answer UDP NAT tests and forward those fields.
+#
+# Output: the `hbbs` binary (Linux x86_64) as a run artifact. Install it on the
+# VPS over /usr/bin/hbbs and restart rustdesk-hbbs (see gsmdesk/README.md).
+
+name: GSMDesk server
+
+on:
+  workflow_dispatch:
+
+env:
+  RUSTDESK_SERVER_TAG: "1.1.16"
+  RUST_VERSION: "1.90"
+
+jobs:
+  build-hbbs:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout GSMDesk
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          path: gsmdesk
+          sparse-checkout: gsmdesk/server
+
+      - name: Get rustdesk-server ${{ env.RUSTDESK_SERVER_TAG }}
+        run: |
+          git clone --depth 1 --branch "$RUSTDESK_SERVER_TAG" \
+            --recurse-submodules --shallow-submodules \
+            https://github.com/rustdesk/rustdesk-server.git server
+
+      - name: Apply GSMDesk P2P patches
+        run: |
+          git -C server apply "$GITHUB_WORKSPACE/gsmdesk/gsmdesk/server/p2p-hbbs.patch"
+          git -C server/libs/hbb_common apply "$GITHUB_WORKSPACE/gsmdesk/gsmdesk/server/p2p-proto.patch"
+          git -C server diff --stat
+          git -C server/libs/hbb_common diff --stat
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9 # v1
+        with:
+          toolchain: ${{ env.RUST_VERSION }}
+
+      - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+        with:
+          workspaces: server
+
+      - name: Build hbbs
+        working-directory: server
+        run: |
+          cargo build --release --bin hbbs
+          ./target/release/hbbs --version || true
+
+      - name: Upload hbbs
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: gsmdesk-hbbs
+          path: server/target/release/hbbs
