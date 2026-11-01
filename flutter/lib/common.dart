@@ -247,6 +247,17 @@ class ColorThemeExtension extends ThemeExtension<ColorThemeExtension> {
   }
 }
 
+/// GSMDesk: section titles use the display face (Chakra Petch), everything
+/// else IBM Plex Sans, as on the GSM Redirector website.
+extension _GsmFonts on ThemeData {
+  ThemeData withGsmFonts() => copyWith(
+        textTheme: textTheme.copyWith(
+          titleLarge: textTheme.titleLarge?.copyWith(
+              fontFamily: MyTheme.fontDisplay, fontWeight: FontWeight.w600),
+        ),
+      );
+}
+
 class MyTheme {
   MyTheme._();
 
@@ -285,13 +296,6 @@ class MyTheme {
     stops: [0, 0.45, 0.75, 1],
   );
 
-  /// Section titles use the display face, everything else IBM Plex Sans.
-  static ThemeData _withGsmFonts(ThemeData t) => t.copyWith(
-        textTheme: t.textTheme.copyWith(
-          titleLarge: t.textTheme.titleLarge
-              ?.copyWith(fontFamily: fontDisplay, fontWeight: FontWeight.w600),
-        ),
-      );
   static const Color canvasColor = Color(0xFF212121);
   static const Color border = Color(0xFFCCCCCC);
   static const Color idColor = Color(0xFF00B6F0);
@@ -409,7 +413,7 @@ class MyTheme {
     }),
   );
 
-  static ThemeData lightTheme = _withGsmFonts(ThemeData(
+  static ThemeData lightTheme = ThemeData(
     // https://stackoverflow.com/questions/77537315/after-upgrading-to-flutter-3-16-the-app-bar-background-color-button-size-and
     useMaterial3: false,
     brightness: Brightness.light,
@@ -509,8 +513,8 @@ class MyTheme {
       ColorThemeExtension.light,
       TabbarTheme.light,
     ],
-  ));
-  static ThemeData darkTheme = _withGsmFonts(ThemeData(
+  ).withGsmFonts();
+  static ThemeData darkTheme = ThemeData(
     useMaterial3: false,
     brightness: Brightness.dark,
     fontFamily: fontText,
@@ -618,7 +622,7 @@ class MyTheme {
       ColorThemeExtension.dark,
       TabbarTheme.dark,
     ],
-  ));
+  ).withGsmFonts();
 
   static ThemeMode getThemeModePreference() {
     return themeModeFromString(bind.mainGetLocalOption(key: kCommConfKeyTheme));
