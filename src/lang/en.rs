@@ -281,6 +281,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("remember-wayland-keyboard-choice-tip", "Don't ask again for this remote computer"),
         ("conn-e2ee-unavailable-tip", "Could not verify end-to-end encryption.\nThe remote device may still be setting up. Try again later.\nIf this keeps happening, the server may be untrusted.\nContinue anyway?"),
         // GSMDesk
+        ("gsm-install-title", "Start with Windows"),
         ("gsm-access-section", "Access"),
         ("gsm-access-click-title", "You will be asked to accept"),
         ("gsm-access-click-tip", "When a technician connects, you will be asked to accept or reject the connection."),

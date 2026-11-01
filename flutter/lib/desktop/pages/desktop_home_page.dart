@@ -190,7 +190,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
   buildRightPane(BuildContext context) {
     return Container(
       color: Theme.of(context).scaffoldBackgroundColor,
-      child: ConnectionPage(),
+      child: ConnectionPage(side: buildInstallSideCard(context)),
     );
   }
 
@@ -644,7 +644,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
       return buildInstallCard("", systemError, "", () {});
     }
 
-    if (isWindows && !bind.isDisableInstallation()) {
+    if (isWindows && !bind.isDisableInstallation() && bind.isIncomingOnly()) {
       if (!bind.mainIsInstalled()) {
         return buildInstallCard(
             "", bind.isOutgoingOnly() ? "" : "install_tip", "Install",
@@ -755,6 +755,73 @@ class _DesktopHomePageState extends State<DesktopHomePage>
       ).marginAll(14);
     }
     return Container();
+  }
+
+  /// GSMDesk: compact install card shown next to "Control remote desktop", so
+  /// the button stays visible whatever the window height.
+  Widget? buildInstallSideCard(BuildContext context) {
+    if (!isWindows ||
+        bind.isDisableInstallation() ||
+        bind.mainGetBuildinOption(key: kOptionHideHelpCards) == 'Y') {
+      return null;
+    }
+    final String content, button;
+    final Future<void> Function() action;
+    if (!bind.mainIsInstalled()) {
+      content = 'install_tip';
+      button = 'Install';
+      action = () async {
+        await rustDeskWinManager.closeAllSubWindows();
+        bind.mainGotoInstall();
+      };
+    } else if (bind.mainIsInstalledLowerVersion()) {
+      content = 'Your installation is lower version.';
+      button = 'Click to upgrade';
+      action = () async {
+        await rustDeskWinManager.closeAllSubWindows();
+        bind.mainUpdateMe();
+      };
+    } else {
+      return null;
+    }
+    final textColor = Theme.of(context).textTheme.bodyMedium?.color;
+    return Container(
+      width: 250,
+      padding: const EdgeInsets.fromLTRB(18, 20, 18, 18),
+      decoration: BoxDecoration(
+        color: MyTheme.gsmCard(context),
+        borderRadius: BorderRadius.circular(13),
+        border: Border.all(color: MyTheme.gsmLine(context)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          buildSectionLabel(context, Icons.power_settings_new,
+              translate('gsm-install-title')),
+          const SizedBox(height: 4),
+          Text(
+            translate(content),
+            style: TextStyle(
+                fontSize: 12.5, height: 1.45, color: textColor?.withOpacity(0.8)),
+          ),
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            height: 36,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10)),
+              ),
+              onPressed: action,
+              child: Text(translate(button),
+                  style: const TextStyle(fontWeight: FontWeight.w600)),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget buildInstallCard(String title, String content, String btnText,

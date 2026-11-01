@@ -189,7 +189,11 @@ class _OnlineStatusWidgetState extends State<OnlineStatusWidget> {
 
 /// Connection page for connecting to a remote peer.
 class ConnectionPage extends StatefulWidget {
-  const ConnectionPage({Key? key}) : super(key: key);
+  /// GSMDesk: optional card shown next to the "Control remote desktop" box
+  /// (wraps below it when the window is narrow).
+  final Widget? side;
+
+  const ConnectionPage({Key? key, this.side}) : super(key: key);
 
   @override
   State<ConnectionPage> createState() => _ConnectionPageState();
@@ -309,10 +313,16 @@ class _ConnectionPageState extends State<ConnectionPage>
         Expanded(
             child: Column(
           children: [
-            Row(
-              children: [
-                Flexible(child: _buildRemoteIDTextField(context)),
-              ],
+            Align(
+              alignment: Alignment.topLeft,
+              child: Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: [
+                  _buildRemoteIDTextField(context),
+                  if (widget.side != null) widget.side!,
+                ],
+              ),
             ).marginOnly(top: 22),
             SizedBox(height: 12),
             Divider().paddingOnly(right: 12),
