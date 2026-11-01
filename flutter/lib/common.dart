@@ -251,20 +251,54 @@ class MyTheme {
   MyTheme._();
 
   static const Color grayBg = Color(0xFFEFEFF2);
-  // GSMDesk brand teal, between the blue and the green of the logo.
-  static const Color accent = Color(0xFF058B97);
-  static const Color accent50 = Color(0x77058B97);
-  static const Color accent80 = Color(0xAA058B97);
-  // GSMDesk logo gradient, used for highlighted cards.
-  static const Color brandBlue = Color(0xFF0B3D91);
-  static const Color brandGreen = Color(0xFF00A884);
+  // GSMDesk: palette and typefaces shared with GSM Redirector (graphite
+  // navy, metallic red, signal blue), taken from its website.
+  static const Color accent = Color(0xFFD8323D);
+  static const Color accent50 = Color(0x77D8323D);
+  static const Color accent80 = Color(0xAAD8323D);
+  static const Color gsmBgDark = Color(0xFF050A12);
+  static const Color gsmBg2Dark = Color(0xFF09121F);
+  static const Color gsmCardDark = Color(0xFF0D1828);
+  static const Color gsmLineDark = Color(0xFF1A3149);
+  static const Color gsmBgLight = Color(0xFFF3F6FA);
+  static const Color gsmBg2Light = Color(0xFFE8EEF5);
+  static const Color gsmLineLight = Color(0xFFCFDAE6);
+  static const String fontText = 'IBM Plex Sans';
+  static const String fontMono = 'IBM Plex Mono';
+  static const String fontDisplay = 'Chakra Petch';
+  static bool _gsmDark(BuildContext c) =>
+      Theme.of(c).brightness == Brightness.dark;
+  static Color gsmCard(BuildContext c) =>
+      _gsmDark(c) ? gsmCardDark : Colors.white;
+  static Color gsmLine(BuildContext c) =>
+      _gsmDark(c) ? gsmLineDark : gsmLineLight;
+  static Color gsmMuted(BuildContext c) =>
+      _gsmDark(c) ? Color(0xFF8193A9) : Color(0xFF5B6C80);
+  /// Data such as IDs and IPs.
+  static Color gsmSignal(BuildContext c) =>
+      _gsmDark(c) ? Color(0xFF27C4FF) : Color(0xFF0A6FB5);
+  static Color gsmOk(BuildContext c) =>
+      _gsmDark(c) ? Color(0xFF34F08F) : Color(0xFF0B8A4B);
+  /// Thin red-to-blue line used as an accent, as in GSM Redirector.
+  static const LinearGradient gsmSignalLine = LinearGradient(
+    colors: [accent, Color(0xFF7C1A22), Color(0xFF1B4E82), Color(0xFF4FB0FF)],
+    stops: [0, 0.45, 0.75, 1],
+  );
+
+  /// Section titles use the display face, everything else IBM Plex Sans.
+  static ThemeData _withGsmFonts(ThemeData t) => t.copyWith(
+        textTheme: t.textTheme.copyWith(
+          titleLarge: t.textTheme.titleLarge
+              ?.copyWith(fontFamily: fontDisplay, fontWeight: FontWeight.w600),
+        ),
+      );
   static const Color canvasColor = Color(0xFF212121);
   static const Color border = Color(0xFFCCCCCC);
   static const Color idColor = Color(0xFF00B6F0);
   static const Color darkGray = Color.fromARGB(255, 148, 148, 148);
   static const Color cmIdColor = Color(0xFF21790B);
   static const Color dark = Colors.black87;
-  static const Color button = Color(0xFF0A9DAA);
+  static const Color button = Color(0xFFD8323D);
   static const Color hoverBorder = Color(0xFF999999);
 
   // ListTile
@@ -375,12 +409,13 @@ class MyTheme {
     }),
   );
 
-  static ThemeData lightTheme = ThemeData(
+  static ThemeData lightTheme = _withGsmFonts(ThemeData(
     // https://stackoverflow.com/questions/77537315/after-upgrading-to-flutter-3-16-the-app-bar-background-color-button-size-and
     useMaterial3: false,
     brightness: Brightness.light,
-    hoverColor: Color.fromARGB(255, 224, 224, 224),
-    scaffoldBackgroundColor: Colors.white,
+    fontFamily: fontText,
+    hoverColor: gsmBg2Light,
+    scaffoldBackgroundColor: gsmBgLight,
     dialogBackgroundColor: Colors.white,
     appBarTheme: AppBarTheme(
       shadowColor: Colors.transparent,
@@ -391,14 +426,14 @@ class MyTheme {
         borderRadius: BorderRadius.circular(18.0),
         side: BorderSide(
           width: 1,
-          color: grayBg,
+          color: gsmLineLight,
         ),
       ),
     ),
     scrollbarTheme: scrollbarTheme,
     inputDecorationTheme: isDesktop
         ? InputDecorationTheme(
-            fillColor: grayBg,
+            fillColor: gsmBgLight,
             filled: true,
             isDense: true,
             border: OutlineInputBorder(
@@ -413,7 +448,7 @@ class MyTheme {
         bodyMedium:
             TextStyle(fontSize: 14, color: Colors.black87, height: 1.25),
         labelLarge: TextStyle(fontSize: 16.0, color: MyTheme.accent80)),
-    cardColor: grayBg,
+    cardColor: Colors.white,
     hintColor: Color(0xFFAAAAAA),
     visualDensity: VisualDensity.adaptivePlatformDensity,
     tabBarTheme: const TabBarTheme(
@@ -443,7 +478,8 @@ class MyTheme {
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
-        backgroundColor: grayBg,
+        backgroundColor: Colors.white,
+        side: BorderSide(color: gsmLineLight),
         foregroundColor: Colors.black87,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8.0),
@@ -458,13 +494,13 @@ class MyTheme {
         style:
             MenuStyle(backgroundColor: MaterialStatePropertyAll(Colors.white))),
     colorScheme: ColorScheme.light(
-        primary: accent, secondary: accent, background: grayBg),
+        primary: accent, secondary: accent, background: gsmBg2Light),
     popupMenuTheme: PopupMenuThemeData(
         color: Colors.white,
         shape: RoundedRectangleBorder(
           side: BorderSide(
               color: (isDesktop || isWebDesktop)
-                  ? Color(0xFFECECEC)
+                  ? gsmLineLight
                   : Colors.transparent),
           borderRadius: BorderRadius.all(Radius.circular(8.0)),
         )),
@@ -473,13 +509,14 @@ class MyTheme {
       ColorThemeExtension.light,
       TabbarTheme.light,
     ],
-  );
-  static ThemeData darkTheme = ThemeData(
+  ));
+  static ThemeData darkTheme = _withGsmFonts(ThemeData(
     useMaterial3: false,
     brightness: Brightness.dark,
-    hoverColor: Color.fromARGB(255, 45, 46, 53),
-    scaffoldBackgroundColor: Color(0xFF18191E),
-    dialogBackgroundColor: Color(0xFF18191E),
+    fontFamily: fontText,
+    hoverColor: Color(0xFF0C1A2B),
+    scaffoldBackgroundColor: gsmBgDark,
+    dialogBackgroundColor: gsmBg2Dark,
     appBarTheme: AppBarTheme(
       shadowColor: Colors.transparent,
     ),
@@ -489,14 +526,14 @@ class MyTheme {
         borderRadius: BorderRadius.circular(18.0),
         side: BorderSide(
           width: 1,
-          color: Color(0xFF24252B),
+          color: gsmLineDark,
         ),
       ),
     ),
     scrollbarTheme: scrollbarThemeDark,
     inputDecorationTheme: (isDesktop || isWebDesktop)
         ? InputDecorationTheme(
-            fillColor: Color(0xFF24252B),
+            fillColor: gsmBgDark,
             filled: true,
             isDense: true,
             border: OutlineInputBorder(
@@ -515,7 +552,7 @@ class MyTheme {
         color: accent80,
       ),
     ),
-    cardColor: Color(0xFF24252B),
+    cardColor: gsmCardDark,
     visualDensity: VisualDensity.adaptivePlatformDensity,
     tabBarTheme: const TabBarTheme(
       labelColor: Colors.white70,
@@ -549,8 +586,8 @@ class MyTheme {
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
-        backgroundColor: Color(0xFF24252B),
-        side: BorderSide(color: Colors.white12, width: 0.5),
+        backgroundColor: gsmCardDark,
+        side: BorderSide(color: gsmLineDark),
         disabledForegroundColor: Colors.white70,
         foregroundColor: Colors.white70,
         shape: RoundedRectangleBorder(
@@ -564,15 +601,16 @@ class MyTheme {
     listTileTheme: listTileTheme,
     menuBarTheme: MenuBarThemeData(
         style: MenuStyle(
-            backgroundColor: MaterialStatePropertyAll(Color(0xFF121212)))),
+            backgroundColor: MaterialStatePropertyAll(gsmBgDark))),
     colorScheme: ColorScheme.dark(
       primary: accent,
       secondary: accent,
-      background: Color(0xFF24252B),
+      background: gsmBg2Dark,
     ),
     popupMenuTheme: PopupMenuThemeData(
+        color: gsmCardDark,
         shape: RoundedRectangleBorder(
-      side: BorderSide(color: Colors.white24),
+      side: BorderSide(color: gsmLineDark),
       borderRadius: BorderRadius.all(Radius.circular(8.0)),
     )),
   ).copyWith(
@@ -580,7 +618,7 @@ class MyTheme {
       ColorThemeExtension.dark,
       TabbarTheme.dark,
     ],
-  );
+  ));
 
   static ThemeMode getThemeModePreference() {
     return themeModeFromString(bind.mainGetLocalOption(key: kCommConfKeyTheme));
@@ -3842,7 +3880,7 @@ Widget loadIcon(double size) {
           ));
 }
 
-var imcomingOnlyHomeSize = Size(280, 300);
+var imcomingOnlyHomeSize = Size(340, 300);
 Size getIncomingOnlyHomeSize() {
   final magicWidth = isWindows ? 11.0 : 2.0;
   final magicHeight = 10.0;

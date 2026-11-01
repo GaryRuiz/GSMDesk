@@ -82,6 +82,9 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     final isIncomingOnly = bind.isIncomingOnly();
     final isOutgoingOnly = bind.isOutgoingOnly();
     final children = <Widget>[
+      Container(
+          height: 2,
+          decoration: BoxDecoration(gradient: MyTheme.gsmSignalLine)),
       if (!isOutgoingOnly) buildPresetPasswordWarning(),
       if (bind.isCustomClient())
         Align(
@@ -134,7 +137,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     return ChangeNotifierProvider.value(
       value: gFFI.serverModel,
       child: Container(
-        width: isIncomingOnly ? 280.0 : 240.0,
+        width: isIncomingOnly ? 340.0 : 240.0,
         color: Theme.of(context).colorScheme.background,
         child: Stack(
           children: [
@@ -150,6 +153,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                 Expanded(child: Container())
               ],
             ),
+            Positioned(top: 10, right: 10, child: buildThemeToggle(context)),
             if (isOutgoingOnly)
               Positioned(
                 bottom: 6,
@@ -192,68 +196,101 @@ class _DesktopHomePageState extends State<DesktopHomePage>
 
   buildIDBoard(BuildContext context) {
     final model = gFFI.serverModel;
+    final isIncomingOnly = bind.isIncomingOnly();
     return Container(
-      margin: const EdgeInsets.only(left: 20, right: 11),
-      height: 57,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.baseline,
-        textBaseline: TextBaseline.alphabetic,
+      margin: const EdgeInsets.only(left: 20, right: 16, top: 6),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 2,
-            decoration: const BoxDecoration(color: MyTheme.accent),
-          ).marginOnly(top: 5),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.only(left: 7),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    height: 25,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          translate("ID"),
-                          style: TextStyle(
-                              fontSize: 14,
-                              color: Theme.of(context)
-                                  .textTheme
-                                  .titleLarge
-                                  ?.color
-                                  ?.withOpacity(0.5)),
-                        ).marginOnly(top: 5),
-                        buildPopupMenu(context)
-                      ],
-                    ),
-                  ),
-                  Flexible(
-                    child: GestureDetector(
-                      onDoubleTap: () {
-                        Clipboard.setData(
-                            ClipboardData(text: model.serverId.text));
-                        showToast(translate("Copied"));
-                      },
-                      child: TextFormField(
-                        controller: model.serverId,
-                        readOnly: true,
-                        decoration: InputDecoration(
-                          border: InputBorder.none,
-                          contentPadding: EdgeInsets.only(top: 10, bottom: 10),
-                        ),
-                        style: TextStyle(
-                          fontSize: 22,
-                        ),
-                      ).workaroundFreezeLinuxMint(),
-                    ),
-                  )
-                ],
+          Row(
+            children: [
+              Expanded(
+                  child: buildSectionLabel(
+                      context, Icons.badge_outlined, translate("ID"))),
+              buildPopupMenu(context),
+            ],
+          ),
+          GestureDetector(
+            onDoubleTap: () {
+              Clipboard.setData(ClipboardData(text: model.serverId.text));
+              showToast(translate("Copied"));
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(
+                color: MyTheme.gsmCard(context),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: MyTheme.gsmLine(context)),
               ),
+              child: TextFormField(
+                controller: model.serverId,
+                readOnly: true,
+                decoration: InputDecoration(
+                  border: InputBorder.none,
+                  filled: false,
+                  contentPadding: EdgeInsets.only(top: 12, bottom: 12),
+                ),
+                style: TextStyle(
+                  fontFamily: MyTheme.fontMono,
+                  fontWeight: FontWeight.w500,
+                  fontSize: isIncomingOnly ? 28 : 24,
+                  letterSpacing: 1,
+                  color: MyTheme.gsmSignal(context),
+                ),
+              ).workaroundFreezeLinuxMint(),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  /// GSMDesk: small uppercase section title with an icon, as in GSM Redirector.
+  Widget buildSectionLabel(BuildContext context, IconData icon, String text) {
+    final color = MyTheme.gsmMuted(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        children: [
+          Icon(icon, size: 15, color: color),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Text(
+              text.toUpperCase(),
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.8,
+                  color: color),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// GSMDesk: switches between the light and the dark theme.
+  Widget buildThemeToggle(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Tooltip(
+      message: translate(isDark ? 'Light' : 'Dark'),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(8),
+        onTap: () =>
+            MyTheme.changeDarkMode(isDark ? ThemeMode.light : ThemeMode.dark),
+        child: Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: MyTheme.gsmCard(context),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: MyTheme.gsmLine(context)),
+          ),
+          child: Icon(
+              isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
+              size: 16,
+              color: MyTheme.gsmMuted(context)),
+        ),
       ),
     );
   }
@@ -405,7 +442,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
         return Container(
           margin: const EdgeInsets.only(left: 20, right: 16, bottom: 10),
           width: double.infinity,
-          height: 38,
+          height: 40,
           child: ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
               shape: RoundedRectangleBorder(
@@ -414,8 +451,10 @@ class _DesktopHomePageState extends State<DesktopHomePage>
             icon: const Icon(Icons.copy, size: 16),
             label: FittedBox(
               fit: BoxFit.scaleDown,
-              child: Text(translate(
-                  showOneTime ? 'Copy ID and password' : 'Copy ID')),
+              child: Text(
+                translate(showOneTime ? 'Copy ID and password' : 'Copy ID'),
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
             ),
             onPressed: () {
               final lines = [
@@ -437,74 +476,96 @@ class _DesktopHomePageState extends State<DesktopHomePage>
   /// connections need approval and lets the user set or remove the permanent
   /// password that allows access without approval.
   Widget buildAccessCard(BuildContext context) {
-    final textColor = Theme.of(context).textTheme.titleLarge?.color;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = Theme.of(context).textTheme.bodyMedium?.color;
+    final actionStyle = TextButton.styleFrom(
+      foregroundColor: MyTheme.accent,
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+    );
     return Obx(() {
       final unattended = _permanentPasswordSet.value;
       return Container(
-        margin: const EdgeInsets.only(left: 20, right: 16, top: 13, bottom: 13),
-        padding: const EdgeInsets.fromLTRB(12, 10, 12, 6),
-        width: double.infinity,
-        decoration: BoxDecoration(
-          color: isDark
-              ? Colors.white.withOpacity(0.05)
-              : Colors.black.withOpacity(0.03),
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: MyTheme.accent.withOpacity(0.35)),
-        ),
+        margin: const EdgeInsets.only(left: 20, right: 16, top: 14, bottom: 12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Icon(unattended ? Icons.key : Icons.touch_app_outlined,
-                    size: 18, color: MyTheme.accent),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    translate(unattended
-                        ? 'gsm-access-password-title'
-                        : 'gsm-access-click-title'),
-                    style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: textColor),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 6),
-            Text(
-              translate(unattended
-                  ? 'gsm-access-password-tip'
-                  : 'gsm-access-click-tip'),
-              style: TextStyle(
-                  fontSize: 12, height: 1.4, color: textColor?.withOpacity(0.7)),
-            ),
-            if (!bind.isDisableSettings())
-              Wrap(
-                spacing: 4,
+            buildSectionLabel(context, Icons.shield_outlined,
+                translate('gsm-access-section')),
+            Container(
+              padding: const EdgeInsets.fromLTRB(12, 10, 12, 4),
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: MyTheme.gsmCard(context),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                    color: unattended
+                        ? MyTheme.gsmOk(context).withOpacity(0.6)
+                        : MyTheme.gsmLine(context)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  TextButton(
-                    onPressed: () => setPasswordDialog(
-                        notEmptyCallback: () =>
-                            _permanentPasswordSet.value = true),
-                    child: Text(translate(
-                        unattended ? 'Change Password' : 'gsm-create-password')),
+                  Row(
+                    children: [
+                      Icon(unattended ? Icons.key : Icons.touch_app_outlined,
+                          size: 18,
+                          color: unattended
+                              ? MyTheme.gsmOk(context)
+                              : MyTheme.gsmSignal(context)),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          translate(unattended
+                              ? 'gsm-access-password-title'
+                              : 'gsm-access-click-title'),
+                          style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: textColor),
+                        ),
+                      ),
+                    ],
                   ),
-                  if (unattended)
-                    TextButton(
-                      onPressed: () async {
-                        if (await bind.mainSetPermanentPasswordWithResult(
-                            password: '')) {
-                          _permanentPasswordSet.value = false;
-                          showToast(translate('gsm-password-removed'));
-                        }
-                      },
-                      child: Text(translate('gsm-remove-password')),
+                  const SizedBox(height: 6),
+                  Text(
+                    translate(unattended
+                        ? 'gsm-access-password-tip'
+                        : 'gsm-access-click-tip'),
+                    style: TextStyle(
+                        fontSize: 12,
+                        height: 1.4,
+                        color: textColor?.withOpacity(0.7)),
+                  ),
+                  if (!bind.isDisableSettings())
+                    Wrap(
+                      spacing: 4,
+                      children: [
+                        TextButton(
+                          style: actionStyle,
+                          onPressed: () => setPasswordDialog(
+                              notEmptyCallback: () =>
+                                  _permanentPasswordSet.value = true),
+                          child: Text(translate(unattended
+                              ? 'Change Password'
+                              : 'gsm-create-password')),
+                        ),
+                        if (unattended)
+                          TextButton(
+                            style: actionStyle,
+                            onPressed: () async {
+                              if (await bind.mainSetPermanentPasswordWithResult(
+                                  password: '')) {
+                                _permanentPasswordSet.value = false;
+                                showToast(translate('gsm-password-removed'));
+                              }
+                            },
+                            child: Text(translate('gsm-remove-password')),
+                          ),
+                      ],
                     ),
                 ],
               ),
+            ),
           ],
         ),
       );
@@ -722,21 +783,21 @@ class _DesktopHomePageState extends State<DesktopHomePage>
       }
     }
 
+    // GSMDesk: a bordered card in the GSM Redirector style instead of
+    // upstream's pink gradient.
+    final cardText = Theme.of(context).textTheme.bodyMedium?.color;
     return Stack(
       children: [
         Container(
           margin: EdgeInsets.fromLTRB(
-              16, marginTop, 16, bind.isIncomingOnly() ? marginTop : 16),
+              20, marginTop, 16, bind.isIncomingOnly() ? marginTop : 16),
           child: Container(
-              // GSMDesk: logo gradient instead of upstream's pink.
               decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [MyTheme.brandBlue, MyTheme.brandGreen],
-                  )),
-              padding: EdgeInsets.all(16),
+                color: MyTheme.gsmCard(context),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: MyTheme.gsmLine(context)),
+              ),
+              padding: EdgeInsets.all(14),
               child: Column(
                   mainAxisAlignment: MainAxisAlignment.start,
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -746,7 +807,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                                   child: Text(
                                 translate(title),
                                 style: TextStyle(
-                                    color: Colors.white,
+                                    color: cardText,
                                     fontWeight: FontWeight.bold,
                                     fontSize: 15),
                               ).marginOnly(bottom: 6)),
@@ -757,29 +818,29 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                           Text(
                             translate(content),
                             style: TextStyle(
-                                height: 1.5,
-                                color: Colors.white,
+                                height: 1.45,
+                                color: cardText?.withOpacity(0.8),
                                 fontWeight: FontWeight.normal,
-                                fontSize: 13),
-                          ).marginOnly(bottom: 14)
+                                fontSize: 12.5),
+                          ).marginOnly(bottom: 12)
                       ] +
                       (btnText.isNotEmpty
                           ? <Widget>[
-                              Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    FixedWidthButton(
-                                      width: 150,
-                                      padding: 8,
-                                      isOutline: true,
-                                      text: translate(btnText),
-                                      textColor: Colors.white,
-                                      borderColor: Colors.white,
-                                      textSize: 16,
-                                      radius: 10,
-                                      onTap: onPressed,
-                                    )
-                                  ])
+                              SizedBox(
+                                width: double.infinity,
+                                height: 36,
+                                child: ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    shape: RoundedRectangleBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(10)),
+                                  ),
+                                  onPressed: onPressed,
+                                  child: Text(translate(btnText),
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.w600)),
+                                ),
+                              )
                             ]
                           : <Widget>[]) +
                       (help != null
@@ -793,7 +854,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                                         style: TextStyle(
                                             decoration:
                                                 TextDecoration.underline,
-                                            color: Colors.white,
+                                            color: MyTheme.gsmSignal(context),
                                             fontSize: 12),
                                       )).marginOnly(top: 6)),
                             ]
@@ -806,7 +867,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
             child: IconButton(
               icon: Icon(
                 Icons.close,
-                color: Colors.white,
+                color: MyTheme.gsmMuted(context),
                 size: 20,
               ),
               onPressed: closeCard,

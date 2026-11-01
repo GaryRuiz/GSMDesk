@@ -10,21 +10,28 @@ from PIL import Image, ImageDraw, ImageFont
 
 HERE = Path(__file__).resolve().parent
 SOURCE = HERE / "source"
-FONT = "C:/Windows/Fonts/segoeuib.ttf"
+# Chakra Petch, the display face of the GSM Redirector website.
+FONT = str(HERE.parents[1] / "flutter/assets/fonts/ChakraPetch-Bold.ttf")
 
-TOP = (11, 61, 145)  # deep blue
-BOTTOM = (0, 168, 132)  # teal green
-DARK_TEXT = (17, 24, 39)
-LIGHT_TEXT = (243, 244, 246)
+# Brushed red metal, lit from the top (same stops as GSM Redirector's RedMetalBrush).
+RED_METAL = [(0.0, (255, 106, 114)), (0.08, (216, 50, 61)), (0.55, (177, 38, 48)), (1.0, (124, 26, 34))]
+SIGNAL = (79, 176, 255)  # GSM Redirector electric blue
+DARK_TEXT = (11, 21, 32)  # website light-mode ink
+LIGHT_TEXT = (238, 244, 251)  # website dark-mode ink
 
 
 def gradient(size):
     im = Image.new("RGB", (size, size))
     px = im.load()
     for y in range(size):
+        t = y / (size - 1)
+        for (t0, c0), (t1, c1) in zip(RED_METAL, RED_METAL[1:]):
+            if t0 <= t <= t1:
+                k = (t - t0) / (t1 - t0)
+                color = tuple(round(a + (b - a) * k) for a, b in zip(c0, c1))
+                break
         for x in range(size):
-            t = (x + y) / (2 * (size - 1))
-            px[x, y] = tuple(round(a + (b - a) * t) for a, b in zip(TOP, BOTTOM))
+            px[x, y] = color
     return im
 
 
@@ -58,7 +65,7 @@ def draw_icon(size=1024):
             (cx - rr, cy - rr, cx + rr, cy + rr),
             start=-50,
             end=50,
-            fill=(255, 255, 255, 255 - i * 50),
+            fill=SIGNAL + (255 - i * 50,),
             width=int(s * 0.05),
         )
     return icon.resize((size, size), Image.LANCZOS)

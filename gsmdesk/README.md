@@ -15,8 +15,9 @@ RustDesk sin conflictos.
 | Archivo | Cambio |
 |---|---|
 | `src/gsmdesk.rs` | Nombre "GSMDesk", servidor propio fijado al compilar y valores por defecto: aceptar conexiones con clic o con contraseña fija opcional (sin contraseña de un solo uso), pantalla ajustada a la ventana y centrada, una ventana por conexión |
-| `flutter/lib/desktop/pages/desktop_home_page.dart` | Botón "Copiar ID", tarjeta de acceso (crear/quitar contraseña fija), aviso de instalación con los colores del logo |
-| `flutter/lib/common.dart` | Color de marca turquesa en lugar del azul de RustDesk |
+| `flutter/lib/desktop/pages/desktop_home_page.dart` | Ventana principal al estilo GSM Redirector: ID en letra monoespaciada, títulos de sección, tarjeta de acceso (crear/quitar contraseña fija), botón "Copiar ID", aviso de instalación, botón de modo claro/oscuro; ventana del cliente más ancha |
+| `flutter/lib/common.dart` | Paleta de GSM Redirector (azul marino, rojo metálico, azul señal) en modo claro y oscuro, y sus tipografías |
+| `flutter/pubspec.yaml`, `flutter/assets/fonts/` | Tipografías de la web de GSM Redirector: Chakra Petch, IBM Plex Sans e IBM Plex Mono (licencia SIL OFL, incluida) |
 | `src/lang/es.rs`, `src/lang/en.rs` | Textos nuevos de GSMDesk y dos textos reescritos (`desk_tip`, `install_tip`) |
 | `src/common.rs`, `src/lib.rs` | Llaman a `gsmdesk::apply()` al arrancar |
 | `build.rs` | Recompila si cambian las variables `GSMDESK_*` |
