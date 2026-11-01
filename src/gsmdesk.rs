@@ -56,6 +56,20 @@ pub fn apply() {
     }
     drop(overwrite);
 
+    // Defaults for the technician; each one can still be changed in the UI.
+    let mut display = config::DEFAULT_DISPLAY_SETTINGS.write().unwrap();
+    // Fit the remote screen to the window, centered. Upstream's default is 1:1
+    // with auto-scroll, which pans the view whenever the mouse nears an edge.
+    display.insert(keys::OPTION_VIEW_STYLE.to_owned(), "adaptive".to_owned());
+    display.insert(keys::OPTION_SCROLL_STYLE.to_owned(), "scrollbar".to_owned());
+    drop(display);
+    // One window per remote session instead of tabs, to work on several
+    // customers side by side.
+    config::DEFAULT_LOCAL_SETTINGS.write().unwrap().insert(
+        keys::OPTION_ENABLE_OPEN_NEW_CONNECTIONS_IN_TABS.to_owned(),
+        "N".to_owned(),
+    );
+
     if let Some(conn_type) = CONN_TYPE.filter(|v| matches!(*v, "incoming" | "outgoing")) {
         config::HARD_SETTINGS
             .write()

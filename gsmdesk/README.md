@@ -14,7 +14,7 @@ RustDesk sin conflictos.
 
 | Archivo | Cambio |
 |---|---|
-| `src/gsmdesk.rs` | Nombre "GSMDesk" y servidor propio fijado al compilar |
+| `src/gsmdesk.rs` | Nombre "GSMDesk", servidor propio fijado al compilar y valores por defecto para el técnico (pantalla ajustada a la ventana y centrada, una ventana por conexión) |
 | `src/common.rs`, `src/lib.rs` | Llaman a `gsmdesk::apply()` al arrancar |
 | `build.rs` | Recompila si cambian las variables `GSMDESK_*` |
 | `flutter/windows/runner/Runner.rc`, `Cargo.toml`, `libs/portable/Cargo.toml` | Nombre y copyright en las propiedades del `.exe` |
