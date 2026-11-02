@@ -767,6 +767,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("conn-e2ee-unavailable-tip", "No se pudo verificar el cifrado de extremo a extremo.\nEs posible que el dispositivo remoto aún se esté configurando. Inténtelo de nuevo más tarde.\nSi esto sigue ocurriendo, es posible que el servidor no sea de confianza.\n¿Continuar de todos modos?"),
         ("Copy ID and password", "Copiar ID y contraseña"),
         // GSMDesk
+        ("gsm-license-activate-short", "Activar"),
+        ("gsm-license-manage-short", "Gestionar"),
         ("gsm-license-section", "Licencia"),
         ("gsm-license-free-title", "Versión gratuita"),
         ("gsm-license-free-tip", "Atiende 1 PC a la vez"),
@@ -786,7 +788,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("gsm-access-section", "Acceso"),
         ("Copy ID", "Copiar ID"),
         ("gsm-access-click-title", "Tendrás que aceptar"),
-        ("gsm-access-click-tip", "Cuando un técnico se conecte, aparecerá un aviso para que aceptes o rechaces la conexión."),
+        ("gsm-access-click-tip", "Cada vez que un técnico se conecte, tendrás que aceptar."),
         ("gsm-access-password-title", "Acceso sin aceptar activado"),
         ("gsm-access-password-tip", "Quien tenga tu contraseña podrá conectarse sin que tengas que aceptar."),
         ("gsm-create-password", "Crear contraseña"),

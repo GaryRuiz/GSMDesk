@@ -594,7 +594,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
             buildSectionLabel(context, Icons.workspace_premium_outlined,
                 translate('gsm-license-section')),
             Container(
-              padding: const EdgeInsets.fromLTRB(12, 10, 12, 4),
+              padding: const EdgeInsets.fromLTRB(12, 8, 4, 8),
               width: double.infinity,
               decoration: BoxDecoration(
                 color: MyTheme.gsmCard(context),
@@ -604,25 +604,36 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                         ? MyTheme.gsmOk(context).withOpacity(0.6)
                         : MyTheme.gsmLine(context)),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
                 children: [
-                  Text(
-                    translate(licensed
-                        ? 'gsm-license-active-title'
-                        : 'gsm-license-free-title'),
-                    style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: licensed ? MyTheme.gsmOk(context) : textColor),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    details,
-                    style: TextStyle(
-                        fontSize: 12,
-                        height: 1.4,
-                        color: textColor?.withOpacity(0.7)),
+                  Expanded(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          translate(licensed
+                              ? 'gsm-license-active-title'
+                              : 'gsm-license-free-title'),
+                          style: TextStyle(
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w600,
+                              color: licensed
+                                  ? MyTheme.gsmOk(context)
+                                  : textColor),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          details,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                              fontSize: 11.5,
+                              height: 1.35,
+                              color: textColor?.withOpacity(0.7)),
+                        ),
+                      ],
+                    ),
                   ),
                   TextButton(
                     style: TextButton.styleFrom(
@@ -633,8 +644,8 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                     ),
                     onPressed: GsmLicense.showActivateDialog,
                     child: Text(translate(licensed
-                        ? 'gsm-license-manage'
-                        : 'gsm-license-activate')),
+                        ? 'gsm-license-manage-short'
+                        : 'gsm-license-activate-short')),
                   ),
                 ],
               ),

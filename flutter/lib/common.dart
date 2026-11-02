@@ -2158,8 +2158,10 @@ Future<bool> restoreWindowPosition(WindowType type,
             1.0)
         : 1.0;
     final minWidth = 900 * ratio;
-    if (size.width < minWidth) {
-      size = Size(minWidth, size.height);
+    final minHeight = 640 * ratio;
+    if (size.width < minWidth || size.height < minHeight) {
+      size = Size(size.width < minWidth ? minWidth : size.width,
+          size.height < minHeight ? minHeight : size.height);
     }
   }
   final offsetLeftTop = await _adjustRestoreMainWindowOffset(
