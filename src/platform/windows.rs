@@ -1724,6 +1724,8 @@ cscript \"{uninstall_shortcut}\"
 {tray_shortcuts}
 {shortcuts}
 copy /Y \"{tmp_path}\\Uninstall {app_name}.lnk\" \"{path}\\\"
+rem GSMDesk: refresh Windows' icon cache so reinstalls over an older version show the current icon.
+ie4uinit.exe -show >nul 2>&1
 {dels}
 {import_config}
 {after_install}
