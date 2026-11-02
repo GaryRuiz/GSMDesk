@@ -2840,6 +2840,8 @@ pub fn main_get_common(key: String) -> String {
         return crate::platform::linux::has_gnome_shortcuts_inhibitor_permission().to_string();
         #[cfg(not(target_os = "linux"))]
         return false.to_string();
+    } else if key == "gsmdesk-hwid" {
+        return crate::gsmdesk::hardware_id();
     } else if key == "permanent-password-set" {
         return ui_interface::is_permanent_password_set().to_string();
     } else if key == "local-permanent-password-set" {

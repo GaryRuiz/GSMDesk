@@ -6,6 +6,7 @@ import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_hbb/common.dart';
+import 'package:flutter_hbb/common/gsmdesk_license.dart';
 import 'package:flutter_hbb/common/widgets/animated_rotation_widget.dart';
 import 'package:flutter_hbb/common/widgets/custom_password.dart';
 import 'package:flutter_hbb/consts.dart';
@@ -99,6 +100,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
       if (!isOutgoingOnly) buildIDBoard(context),
       if (!isOutgoingOnly) buildPasswordBoard(context),
       if (!isOutgoingOnly) buildCopyIdPasswordButton(context),
+      if (!isIncomingOnly) buildLicenseCard(context),
       FutureBuilder<Widget>(
         future: Future.value(
             Obx(() => buildHelpCards(stateGlobal.updateUrl.value))),
@@ -572,6 +574,77 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     });
   }
 
+  /// GSMDesk: licence status. Free: one remote PC at a time; licensed
+  /// (same key as GSM Redirector): several PCs at once.
+  Widget buildLicenseCard(BuildContext context) {
+    final textColor = Theme.of(context).textTheme.bodyMedium?.color;
+    return Obx(() {
+      final licensed = GsmLicense.active.value;
+      final details = [
+        translate(licensed ? 'gsm-license-multi' : 'gsm-license-free-tip'),
+        if (licensed && GsmLicense.plan.value.isNotEmpty) GsmLicense.plan.value,
+        if (licensed && GsmLicense.expires.value.isNotEmpty)
+          '${translate('gsm-license-expires')} ${GsmLicense.expires.value}',
+      ].join(' · ');
+      return Container(
+        margin: const EdgeInsets.only(left: 20, right: 16, top: 4, bottom: 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            buildSectionLabel(context, Icons.workspace_premium_outlined,
+                translate('gsm-license-section')),
+            Container(
+              padding: const EdgeInsets.fromLTRB(12, 10, 12, 4),
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: MyTheme.gsmCard(context),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                    color: licensed
+                        ? MyTheme.gsmOk(context).withOpacity(0.6)
+                        : MyTheme.gsmLine(context)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    translate(licensed
+                        ? 'gsm-license-active-title'
+                        : 'gsm-license-free-title'),
+                    style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: licensed ? MyTheme.gsmOk(context) : textColor),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    details,
+                    style: TextStyle(
+                        fontSize: 12,
+                        height: 1.4,
+                        color: textColor?.withOpacity(0.7)),
+                  ),
+                  TextButton(
+                    style: TextButton.styleFrom(
+                      foregroundColor: MyTheme.accent,
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      textStyle: const TextStyle(
+                          fontSize: 13, fontWeight: FontWeight.w600),
+                    ),
+                    onPressed: GsmLicense.showActivateDialog,
+                    child: Text(translate(licensed
+                        ? 'gsm-license-manage'
+                        : 'gsm-license-activate')),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    });
+  }
+
   buildTip(BuildContext context) {
     final isOutgoingOnly = bind.isOutgoingOnly();
     return Padding(
@@ -947,6 +1020,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
   @override
   void initState() {
     super.initState();
+    GsmLicense.start();
     _updateTimer = periodic_immediate(const Duration(seconds: 1), () async {
       await gFFI.serverModel.fetchID();
       _permanentPasswordSet.value =

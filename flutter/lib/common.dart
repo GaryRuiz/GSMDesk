@@ -16,6 +16,7 @@ import 'package:flutter_hbb/models/peer_model.dart';
 import 'package:flutter_hbb/models/peer_tab_model.dart';
 import 'package:flutter_hbb/models/state_model.dart';
 import 'package:flutter_hbb/utils/multi_window_manager.dart';
+import 'package:flutter_hbb/common/gsmdesk_license.dart';
 import 'package:flutter_hbb/utils/platform_channel.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
@@ -2625,6 +2626,8 @@ connectMainDesktop(String id,
         connToken: connToken,
         forceRelay: forceRelay);
   } else {
+    // GSMDesk: the free version controls one PC at a time.
+    if (!await GsmLicense.canOpenRemoteDesktop(id)) return;
     await rustDeskWinManager.newRemoteDesktop(id,
         password: password,
         isSharedPassword: isSharedPassword,

@@ -89,6 +89,21 @@ ssh ubuntu@IP_DEL_VPS 'sudo cp /usr/bin/hbbs /usr/bin/hbbs.orig && sudo install 
 Para volver al original: `sudo cp /usr/bin/hbbs.orig /usr/bin/hbbs && sudo systemctl restart rustdesk-hbbs`.
 En `/var/log/rustdesk-server/hbbr.log` se ven las conexiones que siguen usando el relé.
 
+### Licencia (gratis y con licencia)
+
+- **Sin licencia:** GSMDesk es gratis para atender **1 PC a la vez**. Recibir
+  conexiones siempre es gratis.
+- **Con licencia activa:** varias PCs a la vez (varias ventanas de control).
+- La licencia es **la misma de GSM Redirector**: misma clave, misma API
+  (`check_license` en `mundogsm.net/api/mundogsm-login.php`) y el mismo
+  identificador de PC, calculado igual que `HardwareId.cs` del Redirector
+  (`hardware_id()` en `src/gsmdesk.rs`). Así, una licencia vinculada a un PC sirve
+  para los dos programas en ese PC.
+- Código: `flutter/lib/common/gsmdesk_license.dart` (activar, comprobar cada 6 h,
+  3 días de margen sin conexión) y el límite en `connectMainDesktop` (`common.dart`).
+- Como GSMDesk es de código abierto (AGPL), este límite está en la app; quien
+  recompile el código podría quitarlo.
+
 ## 3. Compilar para Windows (GitHub Actions)
 
 1. El repositorio es <https://github.com/GaryRuiz/GSMDesk> (rama `main`).

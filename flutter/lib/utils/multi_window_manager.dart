@@ -401,6 +401,24 @@ class RustDeskMultiWindowManager {
     return MultiWindowCallResult(wnds[0], res);
   }
 
+  /// GSMDesk: IDs of the peers with an open remote desktop session, in any
+  /// window (used by the free version's one-PC-at-a-time limit).
+  Future<Set<String>> getOpenRemoteDesktopPeers() async {
+    final peers = <String>{};
+    for (final windowId in List<int>.from(_remoteDesktopWindows)) {
+      try {
+        final res = await DesktopMultiWindow.invokeMethod(
+            windowId, kWindowEventGetRemoteList, null);
+        if (res is String && res.isNotEmpty) {
+          peers.addAll(res.split(',').where((e) => e.isNotEmpty));
+        }
+      } catch (e) {
+        debugPrint('Failed to get the remote list of window $windowId: $e');
+      }
+    }
+    return peers;
+  }
+
   List<int> _findWindowsByType(WindowType type) {
     switch (type) {
       case WindowType.Main:

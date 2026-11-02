@@ -19,6 +19,8 @@
 //! servers, which is only meant for development.
 
 use hbb_common::config::{self, keys};
+#[cfg(windows)]
+use hbb_common::log;
 
 pub const APP_NAME: &str = "GSMDesk";
 #[cfg(target_os = "macos")]
@@ -96,4 +98,79 @@ pub fn apply() {
             .unwrap()
             .insert("conn-type".to_owned(), conn_type.to_owned());
     }
+}
+
+/// Hardware ID used by the technician licence, computed exactly like GSM
+/// Redirector's `HardwareId.Get()` so the same licence key (bound to one PC on
+/// mundogsm.net) works in both programs: first 16 hex chars (upper case) of
+/// SHA-256("<board serial>|<cpu id>"), falling back to the first disk serial.
+/// Empty if it cannot be determined.
+#[cfg(windows)]
+pub fn hardware_id() -> String {
+    static ID: std::sync::OnceLock<String> = std::sync::OnceLock::new();
+    ID.get_or_init(compute_hardware_id).clone()
+}
+
+#[cfg(not(windows))]
+pub fn hardware_id() -> String {
+    String::new()
+}
+
+#[cfg(windows)]
+fn compute_hardware_id() -> String {
+    use hbb_common::sha2::{Digest, Sha256};
+    use std::os::windows::process::CommandExt;
+
+    // One PowerShell run for the three WMI values; each line is "<tag>=<value>"
+    // with the first non-empty value, like the WmiQuery helper in C#.
+    const SCRIPT: &str = "$ErrorActionPreference='SilentlyContinue';\
+        function q($c,$p){ Get-WmiObject $c | ForEach-Object { \"$($_.$p)\".Trim() } \
+        | Where-Object { $_ } | Select-Object -First 1 };\
+        'B=' + (q Win32_BaseBoard SerialNumber);\
+        'C=' + (q Win32_Processor ProcessorId);\
+        'D=' + (q Win32_DiskDrive SerialNumber)";
+    const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+    let output = match std::process::Command::new("powershell")
+        .args(["-NoProfile", "-NonInteractive", "-Command", SCRIPT])
+        .creation_flags(CREATE_NO_WINDOW)
+        .output()
+    {
+        Ok(output) => output,
+        Err(err) => {
+            log::error!("Failed to query the hardware ID: {err}");
+            return String::new();
+        }
+    };
+    let text = String::from_utf8_lossy(&output.stdout);
+    let value = |tag: &str| {
+        text.lines()
+            .find_map(|l| l.trim().strip_prefix(tag))
+            .map(|v| v.trim().to_owned())
+            .unwrap_or_default()
+    };
+
+    let mut parts = Vec::new();
+    let board = value("B=");
+    if !board.is_empty()
+        && !board.eq_ignore_ascii_case("To be filled by O.E.M.")
+        && !board.eq_ignore_ascii_case("Default string")
+    {
+        parts.push(board);
+    }
+    let cpu = value("C=");
+    if !cpu.is_empty() {
+        parts.push(cpu);
+    }
+    if parts.is_empty() {
+        let disk = value("D=");
+        if !disk.is_empty() {
+            parts.push(disk);
+        }
+    }
+    if parts.is_empty() {
+        log::error!("Could not determine the hardware ID");
+        return String::new();
+    }
+    let digest = Sha256::digest(parts.join("|").as_bytes());
+    digest.iter().take(8).map(|b| format!("{b:02X}")).collect()
 }
