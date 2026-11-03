@@ -116,6 +116,32 @@ pub fn hardware_id() -> String {
     String::new()
 }
 
+/// Batch lines for the install script that delete the downloaded GSMDesk.exe
+/// this install was started from, so the desktop is left with only the
+/// installed shortcut. The portable packer passes its full path in
+/// GSMDESK_PORTABLE_EXE. Empty when there is nothing safe to delete.
+#[cfg(windows)]
+pub fn delete_portable_exe_cmd(install_dir: &str) -> String {
+    let Ok(exe) = std::env::var("GSMDESK_PORTABLE_EXE") else {
+        return String::new();
+    };
+    let path = std::path::Path::new(&exe);
+    let is_exe = path
+        .extension()
+        .map_or(false, |e| e.eq_ignore_ascii_case("exe"));
+    let inside_install_dir = !install_dir.is_empty()
+        && exe
+            .to_lowercase()
+            .starts_with(&install_dir.to_lowercase());
+    // Characters cmd.exe would interpret inside a quoted path.
+    let unsafe_for_cmd = exe.contains(['"', '%', '^', '!']);
+    if !is_exe || !path.is_file() || inside_install_dir || unsafe_for_cmd {
+        return String::new();
+    }
+    // The packer exits right after starting GSMDesk; wait a moment anyway.
+    format!("ping -n 3 127.0.0.1 >nul\ndel /F /Q \"{exe}\"")
+}
+
 /// Licence key saved by GSM Redirector's technician app for this Windows user,
 /// so GSMDesk can activate itself without asking for it. Empty if not found.
 ///
