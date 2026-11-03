@@ -116,6 +116,73 @@ pub fn hardware_id() -> String {
     String::new()
 }
 
+/// Licence key saved by GSM Redirector's technician app for this Windows user,
+/// so GSMDesk can activate itself without asking for it. Empty if not found.
+///
+/// GSM Redirector (ConfigStore.cs) keeps a JSON dictionary with `license_key`,
+/// protected with DPAPI (CurrentUser scope, fixed entropy) and base64-encoded:
+/// newer versions in %APPDATA%\GSMRedirectorTechnician\config.dat, v2.2 in
+/// gsmredirector.dat next to GSMRedirectorTechnician.exe, which is looked for
+/// next to a running copy, behind shortcuts and in the usual folders.
+#[cfg(windows)]
+pub fn redirector_license_key() -> String {
+    const SCRIPT: &str = r##"$ErrorActionPreference = 'SilentlyContinue'
+Add-Type -AssemblyName System.Security
+$entropy = [Text.Encoding]::UTF8.GetBytes('GSMRedirectorTechnician.ConfigStore')
+$files = @()
+$files += Get-Item "$env:APPDATA\GSMRedirectorTechnician\config.dat"
+$dirs = @()
+$dirs += Get-CimInstance Win32_Process -Filter "Name='GSMRedirectorTechnician.exe'" | ForEach-Object { Split-Path $_.ExecutablePath }
+$shell = New-Object -ComObject WScript.Shell
+$lnkRoots = @([Environment]::GetFolderPath('Desktop'), "$env:PUBLIC\Desktop", "$env:APPDATA\Microsoft\Windows\Start Menu", "$env:ProgramData\Microsoft\Windows\Start Menu")
+Get-ChildItem $lnkRoots -Filter *.lnk -Recurse -Depth 3 | ForEach-Object {
+  $t = $shell.CreateShortcut($_.FullName).TargetPath
+  if ($t -like '*GSMRedirectorTechnician*.exe') { $dirs += Split-Path $t }
+}
+$files += $dirs | Where-Object { $_ } | ForEach-Object { Get-Item (Join-Path $_ 'gsmredirector.dat') }
+$searchRoots = @([Environment]::GetFolderPath('Desktop'), "$env:USERPROFILE\Downloads", [Environment]::GetFolderPath('MyDocuments'), "$env:ProgramFiles\GSM Redirector")
+$files += Get-ChildItem $searchRoots -Filter gsmredirector.dat -File -Recurse -Depth 3
+foreach ($f in ($files | Where-Object { $_ } | Sort-Object LastWriteTime -Descending)) {
+  $b = [Convert]::FromBase64String((Get-Content -LiteralPath $f.FullName -Raw).Trim())
+  $d = [Security.Cryptography.ProtectedData]::Unprotect($b, $entropy, 'CurrentUser')
+  if (-not $d) { continue }
+  $j = [Text.Encoding]::UTF8.GetString($d) | ConvertFrom-Json
+  if ($j.license_key) { 'K=' + $j.license_key; break }
+}
+"##;
+    use hbb_common::base64::{engine::general_purpose::STANDARD, Engine as _};
+    use std::os::windows::process::CommandExt;
+    const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+    // -EncodedCommand (UTF-16LE, base64) avoids any quoting problem.
+    let utf16: Vec<u8> = SCRIPT.encode_utf16().flat_map(|u| u.to_le_bytes()).collect();
+    let output = match std::process::Command::new("powershell")
+        .args([
+            "-NoProfile",
+            "-NonInteractive",
+            "-EncodedCommand",
+            &STANDARD.encode(utf16),
+        ])
+        .creation_flags(CREATE_NO_WINDOW)
+        .output()
+    {
+        Ok(output) => output,
+        Err(err) => {
+            log::error!("Failed to look for the GSM Redirector licence: {err}");
+            return String::new();
+        }
+    };
+    String::from_utf8_lossy(&output.stdout)
+        .lines()
+        .find_map(|l| l.trim().strip_prefix("K="))
+        .map(|k| k.trim().to_owned())
+        .unwrap_or_default()
+}
+
+#[cfg(not(windows))]
+pub fn redirector_license_key() -> String {
+    String::new()
+}
+
 #[cfg(windows)]
 fn compute_hardware_id() -> String {
     use hbb_common::sha2::{Digest, Sha256};

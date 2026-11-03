@@ -767,6 +767,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("conn-e2ee-unavailable-tip", "No se pudo verificar el cifrado de extremo a extremo.\nEs posible que el dispositivo remoto aún se esté configurando. Inténtelo de nuevo más tarde.\nSi esto sigue ocurriendo, es posible que el servidor no sea de confianza.\n¿Continuar de todos modos?"),
         ("Copy ID and password", "Copiar ID y contraseña"),
         // GSMDesk
+        ("gsm-license-from-redirector", "Se detectó tu licencia de GSM Redirector: licencia activada."),
         ("gsm-license-activate-short", "Activar"),
         ("gsm-license-manage-short", "Gestionar"),
         ("gsm-license-section", "Licencia"),

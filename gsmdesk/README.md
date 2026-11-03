@@ -99,6 +99,11 @@ En `/var/log/rustdesk-server/hbbr.log` se ven las conexiones que siguen usando e
   identificador de PC, calculado igual que `HardwareId.cs` del Redirector
   (`hardware_id()` en `src/gsmdesk.rs`). Así, una licencia vinculada a un PC sirve
   para los dos programas en ese PC.
+- **Se activa sola** si el PC tiene GSM Redirector: GSMDesk lee la clave que guarda
+  el Redirector para ese usuario de Windows (`config.dat` en `%APPDATA%\GSMRedirectorTechnician`
+  o, en la v2.2, `gsmredirector.dat` junto al `.exe`), la comprueba con el servidor
+  y la activa (`redirector_license_key()` en `src/gsmdesk.rs`). Si el técnico quita
+  la licencia a mano, no se vuelve a activar sola.
 - Código: `flutter/lib/common/gsmdesk_license.dart` (activar, comprobar cada 6 h,
   3 días de margen sin conexión) y el límite en `connectMainDesktop` (`common.dart`).
 - Como GSMDesk es de código abierto (AGPL), este límite está en la app; quien

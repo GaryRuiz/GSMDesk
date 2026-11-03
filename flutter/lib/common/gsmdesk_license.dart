@@ -23,6 +23,9 @@ class GsmLicense {
   ];
   static const _kKey = 'gsmdesk-license-key';
   static const _kCache = 'gsmdesk-license-cache';
+  // Set when the user removes the licence, so it is not picked up again from
+  // GSM Redirector behind their back.
+  static const _kNoAutoDetect = 'gsmdesk-license-no-autodetect';
 
   /// How long a licence confirmed by the server stays usable while the
   /// server cannot be reached.
@@ -36,11 +39,26 @@ class GsmLicense {
   static String get key => bind.mainGetLocalOption(key: _kKey);
 
   /// Loads the cached state, then re-checks with the server now and every
-  /// six hours. Call once from the main window.
+  /// six hours. Without a saved key, uses GSM Redirector's one if this PC has
+  /// it. Call once from the main window.
   static void start() {
     _loadCache();
-    refresh();
-    _timer ??= Timer.periodic(const Duration(hours: 6), (_) => refresh());
+    _check();
+    _timer ??= Timer.periodic(const Duration(hours: 6), (_) => _check());
+  }
+
+  static Future<void> _check() async {
+    if (key.isNotEmpty) {
+      await refresh();
+      return;
+    }
+    if (bind.mainGetLocalOption(key: _kNoAutoDetect) == 'Y') return;
+    final found =
+        (await bind.mainGetCommon(key: 'gsmdesk-redirector-license')).trim();
+    if (found.isEmpty) return;
+    if (await refresh(licenseKey: found) == null) {
+      showToast(translate('gsm-license-from-redirector'));
+    }
   }
 
   static void _set(bool isActive, String planText, String expiresText) {
@@ -105,6 +123,7 @@ class GsmLicense {
       final planText = (res['plan'] ?? '').toString();
       final expiresText = (res['expires'] ?? '').toString();
       await bind.mainSetLocalOption(key: _kKey, value: k);
+      await bind.mainSetLocalOption(key: _kNoAutoDetect, value: '');
       await bind.mainSetLocalOption(
           key: _kCache,
           value: jsonEncode({
@@ -130,6 +149,7 @@ class GsmLicense {
   static Future<void> remove() async {
     await bind.mainSetLocalOption(key: _kKey, value: '');
     await bind.mainSetLocalOption(key: _kCache, value: '');
+    await bind.mainSetLocalOption(key: _kNoAutoDetect, value: 'Y');
     _set(false, '', '');
   }
 

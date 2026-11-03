@@ -2842,6 +2842,8 @@ pub fn main_get_common(key: String) -> String {
         return false.to_string();
     } else if key == "gsmdesk-hwid" {
         return crate::gsmdesk::hardware_id();
+    } else if key == "gsmdesk-redirector-license" {
+        return crate::gsmdesk::redirector_license_key();
     } else if key == "permanent-password-set" {
         return ui_interface::is_permanent_password_set().to_string();
     } else if key == "local-permanent-password-set" {
