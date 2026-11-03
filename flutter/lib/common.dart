@@ -3892,6 +3892,36 @@ class _LogoState extends State<_Logo> {
 // max 300 x 60
 Widget loadLogo() => const _Logo();
 
+/// GSMDesk: our main website, shown in a corner of the main window.
+const String kGsmWebsite = 'gsmvyx.com';
+
+Widget gsmWebsiteLink(BuildContext context) {
+  final color = MyTheme.gsmSignal(context);
+  return InkWell(
+    borderRadius: BorderRadius.circular(6),
+    onTap: () => launchUrl(Uri.parse('https://$kGsmWebsite')),
+    child: Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.language, size: 14, color: color),
+          const SizedBox(width: 6),
+          Text(
+            kGsmWebsite.toUpperCase(),
+            style: TextStyle(
+                fontFamily: MyTheme.fontMono,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                letterSpacing: 0.6,
+                color: color),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
 Widget loadIcon(double size) {
   return Image.asset('assets/icon.png',
       width: size,

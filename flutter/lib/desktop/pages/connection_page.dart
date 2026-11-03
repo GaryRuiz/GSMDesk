@@ -134,6 +134,11 @@ class _OnlineStatusWidgetState extends State<OnlineStatusWidget> {
             // ready && public
             // No need to show the guide if is custom client.
             if (!isIncomingOnly) setupServerWidget(),
+            // GSMDesk: main website in the bottom right corner.
+            if (!isIncomingOnly) ...[
+              const Spacer(),
+              gsmWebsiteLink(context).marginOnly(right: em),
+            ],
           ],
         );
 
