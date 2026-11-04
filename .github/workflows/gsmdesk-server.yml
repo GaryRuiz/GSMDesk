@@ -1,11 +1,12 @@
-# Builds the GSMDesk ID server: rustdesk-server's hbbs with gsmdesk/server/p2p-*.patch.
+# Builds the GSMDesk server: rustdesk-server's hbbs and hbbr with gsmdesk/server/*.patch.
 #
-# Stock rustdesk-server does not forward the fields clients need for UDP and IPv6
-# hole punching, so every connection that a TCP punch cannot open goes through
-# the relay. The patches make hbbs answer UDP NAT tests and forward those fields.
+# - p2p-*.patch: stock rustdesk-server does not forward the fields clients need for
+#   UDP and IPv6 hole punching, so every connection that a TCP punch cannot open goes
+#   through the relay. These make hbbs answer UDP NAT tests and forward those fields.
+# - limit-packet.patch: a single packet claiming to be huge aborted the process.
 #
-# Output: the `hbbs` binary (Linux x86_64) as a run artifact. Install it on the
-# VPS over /usr/bin/hbbs and restart rustdesk-hbbs (see gsmdesk/README.md).
+# Output: artifact `gsmdesk-server`, a folder ready to copy to the VPS with the two
+# binaries (Linux x86_64) and the installer (see gsmdesk/README.md).
 
 name: GSMDesk server
 
@@ -17,7 +18,7 @@ env:
   RUST_VERSION: "1.90"
 
 jobs:
-  build-hbbs:
+  build-server:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout GSMDesk
@@ -32,10 +33,11 @@ jobs:
             --recurse-submodules --shallow-submodules \
             https://github.com/rustdesk/rustdesk-server.git server
 
-      - name: Apply GSMDesk P2P patches
+      - name: Apply GSMDesk patches
         run: |
           git -C server apply "$GITHUB_WORKSPACE/gsmdesk/gsmdesk/server/p2p-hbbs.patch"
           git -C server/libs/hbb_common apply "$GITHUB_WORKSPACE/gsmdesk/gsmdesk/server/p2p-proto.patch"
+          git -C server/libs/hbb_common apply "$GITHUB_WORKSPACE/gsmdesk/gsmdesk/server/limit-packet.patch"
           git -C server diff --stat
           git -C server/libs/hbb_common diff --stat
 
@@ -48,14 +50,21 @@ jobs:
         with:
           workspaces: server
 
-      - name: Build hbbs
+      - name: Build hbbs and hbbr
         working-directory: server
         run: |
-          cargo build --release --bin hbbs
+          cargo build --release --bin hbbs --bin hbbr
           ./target/release/hbbs --version || true
+          ./target/release/hbbr --version || true
 
-      - name: Upload hbbs
+      - name: Put the folder together
+        run: |
+          mkdir dist
+          cp server/target/release/hbbs server/target/release/hbbr dist/
+          cp gsmdesk/gsmdesk/server/instalar-servidor.sh gsmdesk/gsmdesk/server/probar-servidor.py dist/
+
+      - name: Upload server
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: gsmdesk-hbbs
-          path: server/target/release/hbbs
+          name: gsmdesk-server
+          path: dist

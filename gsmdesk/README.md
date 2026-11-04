@@ -46,48 +46,53 @@ El ícono actual lo dibuja `make_icon.py` (cuadro rojo metálico como GSM Redire
 
 ## 2. Montar el servidor
 
-Necesitas un VPS con Ubuntu/Debian y los puertos **TCP 21115-21119** y
-**UDP 21116** abiertos. Puede ser el mismo VPS del relay de GSM Redirector:
-no comparten puertos y el instalador no toca nada más.
+Necesitas un VPS con Ubuntu/Debian y los puertos **TCP 21115-21117** y **UDP 21116**
+abiertos. Puede ser el mismo VPS del relay de GSM Redirector: el instalador no usa
+apt ni reinicia nada más, y los servicios corren con su propio usuario y con límites
+de memoria y ancho de banda.
+
+El servidor es `rustdesk-server` con unos parches (`gsmdesk/server/*.patch`) que compila
+`.github/workflows/gsmdesk-server.yml` (*Actions → GSMDesk server*):
+
+- `p2p-hbbs.patch` y `p2p-proto.patch`: el original no reenvía los datos que hacen falta
+  para el P2P por UDP/IPv6, y casi todo terminaba pasando por el relé.
+- `limit-packet.patch`: limita el tamaño de los paquetes. Sin esto, un solo paquete de
+  los robots que rastrean internet podía tumbar el servidor.
+
+Descarga el artefacto `gsmdesk-server`, cópialo al VPS y ejecuta el instalador:
 
 ```bash
-# en el VPS, como root, copiando la carpeta gsmdesk/server
-bash instalar-servidor.sh
+scp -r gsmdesk-server root@IP_DEL_VPS:/root/
+ssh root@IP_DEL_VPS "cd /root/gsmdesk-server && bash instalar-servidor.sh"
 ```
 
-Instala `rustdesk-server` como servicios systemd (`rustdesk-hbbs` y
-`rustdesk-hbbr`), sin Docker. Al final muestra la IP y `GSMDESK_KEY` (la clave pública).
-**Guarda una copia de `/var/lib/rustdesk-server/id_ed25519*`**: si pierdes la
-clave privada, todos los GSMDesk ya instalados dejan de conectar.
+Crea los servicios `rustdesk-hbbs` y `rustdesk-hbbr` en `/opt/gsmdesk-server` (los
+registros se ven con `journalctl -u rustdesk-hbbr`). El relé solo acepta clientes con la
+llave. Al final muestra `GSMDESK_KEY` (la clave pública). **Guarda una copia de
+`/var/lib/rustdesk-server/id_ed25519*`**: si pierdes la clave privada, todos los GSMDesk
+ya instalados dejan de conectar. Para conservar la llave de otro servidor, deja
+`id_ed25519` e `id_ed25519.pub` en la carpeta antes de ejecutar el instalador.
 
-Para `GSMDESK_SERVER` es mejor usar un **subdominio** (por ejemplo
-`desk.mundogsm.net`, un registro A que apunte al VPS) que la IP directa. Así, si
-algún día cambias de VPS, basta con mover el subdominio y copiar la clave; los
-GSMDesk ya instalados siguen funcionando sin recompilar.
+Para comprobar el servidor desde cualquier PC:
 
-`docker-compose.yml` queda como alternativa para un VPS dedicado con Docker.
+```bash
+python probar-servidor.py IP_DEL_VPS LLAVE_PUBLICA
+```
+
+Para `GSMDESK_SERVER` usa un **subdominio** (`desk.gsmvyx.com`, un registro A que apunte
+al VPS, con la nube gris en Cloudflare) en vez de la IP. Así, si algún día cambias de
+VPS, basta con mover el subdominio y copiar la clave; los GSMDesk ya instalados siguen
+funcionando sin recompilar.
+
+Para quitarlo: `systemctl disable --now rustdesk-hbbs rustdesk-hbbr`, borrar sus dos
+archivos en `/etc/systemd/system`, y `ufw delete allow 21115:21117/tcp` y
+`ufw delete allow 21116/udp`.
 
 ### Conexión directa (P2P)
 
 GSMDesk intenta primero una conexión directa entre los dos PCs (P2P por UDP y por
-IPv6) y solo usa el relé del VPS si no se puede, igual que GSM Redirector.
-
-El `rustdesk-server` original **no** reenvía los datos que hacen falta para el P2P
-por UDP/IPv6, así que casi todo terminaba pasando por el relé. Por eso usamos un
-`hbbs` parcheado:
-
-- `gsmdesk/server/p2p-hbbs.patch` y `p2p-proto.patch`: los cambios (unas 35 líneas).
-- `.github/workflows/gsmdesk-server.yml`: lo compila (*Actions → GSMDesk server*).
-
-Para instalarlo en el VPS, descarga el artefacto `gsmdesk-hbbs` y:
-
-```bash
-scp hbbs ubuntu@IP_DEL_VPS:/tmp/hbbs
-ssh ubuntu@IP_DEL_VPS 'sudo cp /usr/bin/hbbs /usr/bin/hbbs.orig && sudo install -m 755 /tmp/hbbs /usr/bin/hbbs && sudo systemctl restart rustdesk-hbbs'
-```
-
-Para volver al original: `sudo cp /usr/bin/hbbs.orig /usr/bin/hbbs && sudo systemctl restart rustdesk-hbbs`.
-En `/var/log/rustdesk-server/hbbr.log` se ven las conexiones que siguen usando el relé.
+IPv6) y solo usa el relé del VPS si no se puede, igual que GSM Redirector. En los
+registros de `rustdesk-hbbr` se ven las conexiones que siguen usando el relé.
 
 ### Licencia (gratis y con licencia)
 

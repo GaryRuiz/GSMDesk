@@ -1,0 +1,16 @@
+diff --git a/src/bytes_codec.rs b/src/bytes_codec.rs
+index bfc7987..4b6e255 100644
+--- a/src/bytes_codec.rs
++++ b/src/bytes_codec.rs
+@@ -26,7 +26,10 @@ impl BytesCodec {
+         Self {
+             state: DecodeState::Head,
+             raw: false,
+-            max_packet_length: usize::MAX,
++            // GSMDesk: the length comes straight from the network, before any check,
++            // and reserving it let one packet from a scanner abort the process.
++            // Rendezvous and relay handshake messages are far smaller than this.
++            max_packet_length: 16 * 1024 * 1024,
+         }
+     }
+ 
