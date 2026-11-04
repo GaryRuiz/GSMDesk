@@ -795,5 +795,18 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("gsm-create-password", "Crear contraseña"),
         ("gsm-remove-password", "Quitar contraseña"),
         ("gsm-password-removed", "Contraseña quitada: ahora tendrás que aceptar cada conexión."),
+        ("gsm-your-id", "Tu ID"),
+        ("gsm-connect-section", "Conectar a otro equipo"),
+        ("gsm-access-password-short", "Con contraseña"),
+        ("gsm-scam-title", "Solo continúa si confías en quien te lo pidió"),
+        ("gsm-scam-text", "Al iniciar el servicio, esa persona podrá pedir ver y controlar este dispositivo. Si te llamó alguien que no conoces, no continúes."),
+        ("gsm-update-title", "Versión nueva lista:"),
+        ("gsm-update-tip-windows", "Ya se descargó y se comprobó que es auténtica. Al instalarla se cerrarán las sesiones abiertas, Windows pedirá permiso y GSMDesk se volverá a abrir."),
+        ("gsm-update-tip-android", "Ya se descargó y se comprobó que es auténtica. Android te pedirá confirmar la instalación."),
+        ("gsm-update-later", "Más tarde"),
+        ("gsm-update-now", "Instalar ahora"),
+        ("gsm-update-button", "Actualizar"),
+        ("gsm-update-downloading", "Descargando"),
+        ("gsm-update-failed", "No se pudo instalar la actualización."),
     ].iter().cloned().collect();
 }

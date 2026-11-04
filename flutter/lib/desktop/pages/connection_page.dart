@@ -18,14 +18,19 @@ import '../../common.dart';
 import '../../common/formatter/id_formatter.dart';
 import '../../common/widgets/peer_tab_page.dart';
 import '../../common/widgets/autocomplete.dart';
+import '../../mobile/widgets/gsm_widgets.dart';
 import '../../models/platform_model.dart';
 import '../../desktop/widgets/material_mod_popup_menu.dart' as mod_menu;
 
 class OnlineStatusWidget extends StatefulWidget {
-  const OnlineStatusWidget({Key? key, this.onSvcStatusChanged})
+  const OnlineStatusWidget(
+      {Key? key, this.onSvcStatusChanged, this.compact = false})
       : super(key: key);
 
   final VoidCallback? onSvcStatusChanged;
+
+  /// GSMDesk: only the dot and the status, to sit next to the ID.
+  final bool compact;
 
   @override
   State<OnlineStatusWidget> createState() => _OnlineStatusWidgetState();
@@ -142,6 +147,30 @@ class _OnlineStatusWidgetState extends State<OnlineStatusWidget> {
           ],
         );
 
+    if (widget.compact) {
+      return Obx(() => Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                height: 8,
+                width: 8,
+                margin: const EdgeInsets.only(right: 6),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(4),
+                  color: _svcStopped.value ||
+                          stateGlobal.svcStatus.value == SvcStatus.connecting
+                      ? kColorWarn
+                      : (stateGlobal.svcStatus.value == SvcStatus.ready
+                          ? MyTheme.gsmOk(context)
+                          : Color.fromARGB(255, 224, 79, 95)),
+                ),
+              ),
+              Flexible(child: _buildConnStatusMsg()),
+              startServiceWidget(),
+            ],
+          ));
+    }
+
     return Container(
       height: height,
       child: Obx(() => isIncomingOnly
@@ -169,6 +198,8 @@ class _OnlineStatusWidgetState extends State<OnlineStatusWidget> {
                   ? translate("not_ready_status")
                   : translate('Ready'),
       style: TextStyle(fontSize: em),
+      maxLines: widget.compact ? 1 : null,
+      overflow: widget.compact ? TextOverflow.ellipsis : null,
     );
   }
 
@@ -198,7 +229,14 @@ class ConnectionPage extends StatefulWidget {
   /// (wraps below it when the window is narrow).
   final Widget? side;
 
-  const ConnectionPage({Key? key, this.side}) : super(key: key);
+  /// GSMDesk: card placed to the left of the connect box, at the same size.
+  final Widget? leading;
+
+  /// GSMDesk: replaces the status bar at the bottom.
+  final Widget? bottom;
+
+  const ConnectionPage({Key? key, this.side, this.leading, this.bottom})
+      : super(key: key);
 
   @override
   State<ConnectionPage> createState() => _ConnectionPageState();
@@ -318,24 +356,41 @@ class _ConnectionPageState extends State<ConnectionPage>
         Expanded(
             child: Column(
           children: [
-            Align(
-              alignment: Alignment.topLeft,
-              child: Wrap(
-                spacing: 12,
-                runSpacing: 12,
-                children: [
-                  _buildRemoteIDTextField(context),
-                  if (widget.side != null) widget.side!,
-                ],
-              ),
-            ).marginOnly(top: 14),
+            if (widget.leading != null)
+              SizedBox(
+                height: 136,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(child: widget.leading!),
+                    const SizedBox(width: 12),
+                    Expanded(child: _buildRemoteIDTextField(context)),
+                  ],
+                ),
+              ).marginOnly(top: 12, right: 12)
+            else
+              Align(
+                alignment: Alignment.topLeft,
+                child: Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: [
+                    _buildRemoteIDTextField(context),
+                    if (widget.side != null) widget.side!,
+                  ],
+                ),
+              ).marginOnly(top: 14),
             SizedBox(height: 8),
             Divider().paddingOnly(right: 12),
             Expanded(child: PeerTabPage()),
           ],
         ).paddingOnly(left: 12.0)),
-        if (!isOutgoingOnly) const Divider(height: 1),
-        if (!isOutgoingOnly) OnlineStatusWidget()
+        if (widget.bottom != null)
+          widget.bottom!
+        else ...[
+          if (!isOutgoingOnly) const Divider(height: 1),
+          if (!isOutgoingOnly) OnlineStatusWidget()
+        ]
       ],
     );
   }
@@ -357,15 +412,23 @@ class _ConnectionPageState extends State<ConnectionPage>
   /// Search for a peer.
   Widget _buildRemoteIDTextField(BuildContext context) {
     var w = Container(
-      width: 300 + 16 * 2,
+      width: widget.leading != null ? null : 300 + 16 * 2,
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
       decoration: BoxDecoration(
+          color: widget.leading != null ? MyTheme.gsmCard(context) : null,
           borderRadius: const BorderRadius.all(Radius.circular(13)),
-          border: Border.all(color: Theme.of(context).colorScheme.background)),
+          border: Border.all(
+              color: widget.leading != null
+                  ? MyTheme.gsmLine(context)
+                  : Theme.of(context).colorScheme.background)),
       child: Ink(
         child: Column(
           children: [
-            getConnectionPageTitle(context, false).marginOnly(bottom: 10),
+            if (widget.leading != null)
+              GsmSectionLabel(translate('gsm-connect-section'),
+                  icon: const Icon(Icons.desktop_windows_outlined))
+            else
+              getConnectionPageTitle(context, false).marginOnly(bottom: 10),
             Row(
               children: [
                 Expanded(
@@ -627,6 +690,7 @@ class _ConnectionPageState extends State<ConnectionPage>
         ),
       ),
     );
+    if (widget.leading != null) return w;
     return Container(
         constraints: const BoxConstraints(maxWidth: 600), child: w);
   }

@@ -7,13 +7,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_hbb/common.dart';
 import 'package:flutter_hbb/common/gsmdesk_license.dart';
+import 'package:flutter_hbb/common/gsmdesk_update.dart';
 import 'package:flutter_hbb/common/widgets/animated_rotation_widget.dart';
 import 'package:flutter_hbb/common/widgets/custom_password.dart';
+import 'package:flutter_hbb/common/widgets/dialog.dart';
 import 'package:flutter_hbb/consts.dart';
 import 'package:flutter_hbb/desktop/pages/connection_page.dart';
 import 'package:flutter_hbb/desktop/pages/desktop_setting_page.dart';
 import 'package:flutter_hbb/desktop/pages/desktop_tab_page.dart';
 import 'package:flutter_hbb/desktop/widgets/update_progress.dart';
+import 'package:flutter_hbb/mobile/widgets/gsm_widgets.dart';
 import 'package:flutter_hbb/models/platform_model.dart';
 import 'package:flutter_hbb/models/server_model.dart';
 import 'package:flutter_hbb/models/state_model.dart';
@@ -63,6 +66,9 @@ class _DesktopHomePageState extends State<DesktopHomePage>
   Widget build(BuildContext context) {
     super.build(context);
     final isIncomingOnly = bind.isIncomingOnly();
+    if (!isIncomingOnly && !bind.isOutgoingOnly()) {
+      return _buildBlock(child: buildTopLayout(context));
+    }
     return _buildBlock(
         child: Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -72,6 +78,324 @@ class _DesktopHomePageState extends State<DesktopHomePage>
         if (!isIncomingOnly) Expanded(child: buildRightPane(context)),
       ],
     ));
+  }
+
+  /// GSMDesk: your ID and the box to reach another PC side by side, under a
+  /// header with the brand and the general actions.
+  Widget buildTopLayout(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        buildHeader(context),
+        buildPresetPasswordWarning(),
+        Obx(() => buildHelpCards(stateGlobal.updateUrl.value)),
+        buildPluginEntry(),
+        Expanded(
+          child: Container(
+            color: Theme.of(context).scaffoldBackgroundColor,
+            child: ConnectionPage(
+              leading: buildIdCard(context),
+              bottom: buildBottomBar(context),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget buildHeader(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Container(
+          color: Theme.of(context).colorScheme.background,
+          padding: const EdgeInsets.fromLTRB(14, 8, 10, 8),
+          child: Row(
+            children: [
+              loadIcon(24),
+              const SizedBox(width: 8),
+              Text(
+                bind.mainGetAppNameSync(),
+                style: const TextStyle(
+                    fontFamily: MyTheme.fontDisplay,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 19),
+              ),
+              const Spacer(),
+              gsmUpdateChip(context),
+              buildInstallChip(context),
+              const SizedBox(width: 6),
+              buildLicenseChip(context),
+              const SizedBox(width: 6),
+              buildThemeToggle(context),
+              const SizedBox(width: 2),
+              buildPopupMenu(context),
+            ],
+          ),
+        ),
+        Container(
+            height: 2,
+            decoration: const BoxDecoration(gradient: MyTheme.gsmSignalLine)),
+      ],
+    );
+  }
+
+  Widget buildInstallChip(BuildContext context) {
+    if (!isWindows ||
+        bind.isDisableInstallation() ||
+        bind.mainGetBuildinOption(key: kOptionHideHelpCards) == 'Y') {
+      return const SizedBox.shrink();
+    }
+    final String tip, label;
+    final Future<void> Function() action;
+    if (!bind.mainIsInstalled()) {
+      tip = 'install_tip';
+      label = 'Install';
+      action = () async {
+        await rustDeskWinManager.closeAllSubWindows();
+        bind.mainGotoInstall();
+      };
+    } else if (bind.mainIsInstalledLowerVersion()) {
+      tip = 'Your installation is lower version.';
+      label = 'Click to upgrade';
+      action = () async {
+        await rustDeskWinManager.closeAllSubWindows();
+        bind.mainUpdateMe();
+      };
+    } else {
+      return const SizedBox.shrink();
+    }
+    return Tooltip(
+      message: translate(tip),
+      child: SizedBox(
+        height: 28,
+        child: ElevatedButton(
+          onPressed: action,
+          child: Text(translate(label),
+              style:
+                  const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+        ),
+      ),
+    );
+  }
+
+  Widget buildLicenseChip(BuildContext context) {
+    return Obx(() {
+      final licensed = GsmLicense.active.value;
+      final color =
+          licensed ? MyTheme.gsmOk(context) : MyTheme.gsmMuted(context);
+      return Tooltip(
+        message:
+            translate(licensed ? 'gsm-license-multi' : 'gsm-license-free-tip'),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(8),
+          onTap: GsmLicense.showActivateDialog,
+          child: Container(
+            height: 28,
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            decoration: BoxDecoration(
+              color: MyTheme.gsmCard(context),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: MyTheme.gsmLine(context)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.workspace_premium_outlined, size: 14, color: color),
+                const SizedBox(width: 5),
+                Text(
+                  translate(licensed
+                      ? 'gsm-license-active-title'
+                      : 'gsm-license-free-title'),
+                  style: TextStyle(
+                      fontSize: 13, fontWeight: FontWeight.w600, color: color),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    });
+  }
+
+  Widget buildIdCard(BuildContext context) {
+    return ChangeNotifierProvider.value(
+      value: gFFI.serverModel,
+      child: Consumer<ServerModel>(builder: (context, model, child) {
+        final showOneTime = model.approveMode != 'click' &&
+            model.verificationMethod != kUsePermanentPassword;
+        return Container(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+          decoration: BoxDecoration(
+            color: MyTheme.gsmCard(context),
+            borderRadius: BorderRadius.circular(13),
+            border: Border.all(color: MyTheme.gsmLine(context)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              GsmSectionLabel(translate('gsm-your-id'),
+                  icon: const Icon(Icons.badge_outlined)),
+              Row(
+                children: [
+                  Expanded(
+                    flex: 3,
+                    child: GestureDetector(
+                      onDoubleTap: () {
+                        Clipboard.setData(
+                            ClipboardData(text: model.serverId.text));
+                        showToast(translate("Copied"));
+                      },
+                      child: TextFormField(
+                        controller: model.serverId,
+                        readOnly: true,
+                        decoration: const InputDecoration(
+                          border: InputBorder.none,
+                          filled: false,
+                          isDense: true,
+                          contentPadding: EdgeInsets.zero,
+                        ),
+                        style: TextStyle(
+                          fontFamily: MyTheme.fontMono,
+                          fontWeight: FontWeight.w500,
+                          fontSize: 22,
+                          letterSpacing: 1,
+                          color: MyTheme.gsmSignal(context),
+                        ),
+                      ).workaroundFreezeLinuxMint(),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  const Flexible(
+                      flex: 2, child: OnlineStatusWidget(compact: true)),
+                ],
+              ),
+              const Spacer(),
+              Row(
+                children: [
+                  SizedBox(
+                    height: 28,
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        backgroundColor: Colors.transparent,
+                        foregroundColor:
+                            Theme.of(context).textTheme.bodyMedium?.color,
+                        side: BorderSide(color: MyTheme.gsmLine(context)),
+                      ),
+                      icon: const Icon(Icons.copy, size: 14),
+                      label: Text(
+                        translate(
+                            showOneTime ? 'Copy ID and password' : 'Copy ID'),
+                        style: const TextStyle(
+                            fontSize: 14, fontWeight: FontWeight.w600),
+                      ),
+                      onPressed: () => copyIdAndPassword(model, showOneTime),
+                    ),
+                  ),
+                  if (showOneTime) ...[
+                    const Spacer(),
+                    Text(model.serverPasswd.text,
+                        style: const TextStyle(
+                            fontFamily: MyTheme.fontMono, fontSize: 15)),
+                    InkWell(
+                      onTap: () => bind.mainUpdateTemporaryPassword(),
+                      child: Tooltip(
+                        message: translate('Refresh Password'),
+                        child: Icon(Icons.refresh,
+                            size: 16, color: MyTheme.gsmMuted(context)),
+                      ).marginOnly(left: 6),
+                    ),
+                  ],
+                ],
+              ),
+            ],
+          ),
+        );
+      }),
+    );
+  }
+
+  void copyIdAndPassword(ServerModel model, bool showOneTime) {
+    final lines = [
+      bind.mainGetAppNameSync(),
+      '${translate("ID")}: ${model.serverId.text}',
+      if (showOneTime && model.serverPasswd.text.isNotEmpty)
+        '${translate("Password")}: ${model.serverPasswd.text}',
+    ];
+    Clipboard.setData(ClipboardData(text: lines.join('\n')));
+    showToast(translate('Copied'));
+  }
+
+  Widget buildBottomBar(BuildContext context) {
+    return Container(
+      height: 36,
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.background,
+        border: Border(top: BorderSide(color: MyTheme.gsmLine(context))),
+      ),
+      child: Row(
+        children: [
+          buildPasswordAction(context),
+          const Spacer(),
+          if (bind.isCustomClient())
+            Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: loadPowered(context),
+            ),
+          const Spacer(),
+          gsmWebsiteLink(context),
+        ],
+      ),
+    );
+  }
+
+  /// GSMDesk: creates the permanent password, or changes or removes it, from
+  /// the bottom bar. The tooltip explains what it means for connections.
+  Widget buildPasswordAction(BuildContext context) {
+    return Obx(() {
+      final passwordSet = _permanentPasswordSet.value;
+      final canEdit =
+          !bind.isDisableSettings() && !isChangePermanentPasswordDisabled();
+      return Tooltip(
+        message: translate(
+            passwordSet ? 'gsm-access-password-tip' : 'gsm-access-click-tip'),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(6),
+          onTap: canEdit
+              ? () => setPasswordDialog(
+                  notEmptyCallback: () => _permanentPasswordSet.value = true)
+              : null,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.key,
+                    size: 15,
+                    color:
+                        passwordSet ? MyTheme.gsmOk(context) : MyTheme.accent),
+                const SizedBox(width: 6),
+                if (passwordSet) ...[
+                  Text(translate('gsm-access-password-short'),
+                      style: const TextStyle(fontSize: 13)),
+                  const SizedBox(width: 8),
+                ],
+                if (canEdit)
+                  Text(
+                    translate(
+                        passwordSet ? 'Change Password' : 'gsm-create-password'),
+                    style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: MyTheme.accent),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      );
+    });
   }
 
   Widget _buildBlock({required Widget child}) {
@@ -1045,6 +1369,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
   void initState() {
     super.initState();
     GsmLicense.start();
+    GsmUpdate.start();
     _updateTimer = periodic_immediate(const Duration(seconds: 1), () async {
       await gFFI.serverModel.fetchID();
       _permanentPasswordSet.value =
@@ -1439,20 +1764,25 @@ void setPasswordDialog({VoidCallback? notEmptyCallback}) async {
         final removeButton = dialogButton(
           "Remove",
           icon: Icon(Icons.delete_outline_rounded),
-          onPressed: () async {
-            setState(() {
-              errMsg0 = "";
-              errMsg1 = "";
-            });
-            final ok =
-                await bind.mainSetPermanentPasswordWithResult(password: "");
-            if (!ok) {
+          onPressed: () {
+            // GSMDesk: removing it can lock you out of a PC you reach remotely.
+            CommonConfirmDialog(
+                gFFI.dialogManager, translate('gsm-access-click-tip'),
+                () async {
               setState(() {
-                errMsg0 = '${translate('Prompt')}: ${translate("Failed")}';
+                errMsg0 = "";
+                errMsg1 = "";
               });
-              return;
-            }
-            close();
+              final ok =
+                  await bind.mainSetPermanentPasswordWithResult(password: "");
+              if (!ok) {
+                setState(() {
+                  errMsg0 = '${translate('Prompt')}: ${translate("Failed")}';
+                });
+                return;
+              }
+              close();
+            });
           },
           buttonStyle: ButtonStyle(
               backgroundColor: MaterialStatePropertyAll(Colors.red)),

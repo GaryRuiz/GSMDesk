@@ -4,6 +4,7 @@ import 'package:flutter_hbb/mobile/pages/settings_page.dart';
 import 'package:flutter_hbb/web/settings_page.dart';
 import 'package:get/get.dart';
 import '../../common.dart';
+import '../../common/gsmdesk_update.dart';
 import '../../common/widgets/chat_page.dart';
 import '../../models/platform_model.dart';
 import '../../models/state_model.dart';
@@ -43,6 +44,7 @@ class HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     initPages();
+    GsmUpdate.start();
   }
 
   void initPages() {
@@ -79,6 +81,7 @@ class HomePageState extends State<HomePage> {
             titleSpacing: 14,
             title: appTitle(),
             actions: [
+              gsmUpdateChip(context),
               buildThemeToggle(context),
               ..._pages.elementAt(_selectedIndex).appBarActions,
             ],

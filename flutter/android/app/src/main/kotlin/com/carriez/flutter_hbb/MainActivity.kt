@@ -25,7 +25,9 @@ import android.media.MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlan
 import android.media.MediaCodecList
 import android.media.MediaFormat
 import android.util.DisplayMetrics
+import androidx.core.content.FileProvider
 import androidx.annotation.RequiresApi
+import java.io.File
 import org.json.JSONArray
 import org.json.JSONObject
 import com.hjq.permissions.XXPermissions
@@ -129,6 +131,23 @@ class MainActivity : FlutterActivity() {
         flutterMethodChannel.setMethodCallHandler { call, result ->
             // make sure result will be invoked, otherwise flutter will await forever
             when (call.method) {
+                "install_apk" -> {
+                    // GSMDesk: hands a verified update to Android's installer.
+                    try {
+                        val dir = File(cacheDir, "update").apply { mkdirs() }
+                        val apk = File(dir, "GSMDesk-update.apk")
+                        File(call.arguments as String).copyTo(apk, overwrite = true)
+                        val uri = FileProvider.getUriForFile(this, "$packageName.fileprovider", apk)
+                        startActivity(Intent(Intent.ACTION_VIEW).apply {
+                            setDataAndType(uri, "application/vnd.android.package-archive")
+                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+                        })
+                        result.success(true)
+                    } catch (e: Exception) {
+                        Log.e(logTag, "install_apk failed: $e")
+                        result.success(false)
+                    }
+                }
                 "init_service" -> {
                     Intent(activity, MainService::class.java).also {
                         bindService(it, serviceConnection, Context.BIND_AUTO_CREATE)

@@ -2840,6 +2840,10 @@ pub fn main_get_common(key: String) -> String {
         return crate::platform::linux::has_gnome_shortcuts_inhibitor_permission().to_string();
         #[cfg(not(target_os = "linux"))]
         return false.to_string();
+    } else if key == "gsm-update-state" {
+        return crate::gsmdesk_update::state_json();
+    } else if key == "gsm-update-file" {
+        return crate::gsmdesk_update::verified_file().unwrap_or_default();
     } else if key == "gsmdesk-hwid" {
         return crate::gsmdesk::hardware_id();
     } else if key == "gsmdesk-redirector-license" {
@@ -2904,6 +2908,17 @@ pub fn main_get_common_sync(key: String) -> SyncReturn<String> {
 }
 
 pub fn main_set_common(_key: String, _value: String) {
+    if _key == "gsm-update-check" {
+        crate::gsmdesk_update::start();
+        return;
+    }
+    #[cfg(target_os = "windows")]
+    if _key == "gsm-update-install" {
+        if let Err(e) = crate::gsmdesk_update::install() {
+            log::error!("Failed to install the update: {}", e);
+        }
+        return;
+    }
     #[cfg(target_os = "windows")]
     if _key == "install-printer" && crate::platform::is_win_10_or_greater() {
         std::thread::spawn(move || {

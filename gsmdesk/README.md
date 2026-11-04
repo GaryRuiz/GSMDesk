@@ -173,6 +173,33 @@ El paquete de Android es `com.gsmdesk.app`. El código Kotlin sigue en
 `com.carriez.flutter_hbb` a propósito, para que las actualizaciones de RustDesk
 sigan entrando sin conflictos. El usuario no lo ve.
 
+## 3c. Publicar una actualización
+
+GSMDesk busca versiones nuevas al abrirse y cada 6 horas, y las descarga solo. Al
+terminar aparece el botón **Actualizar** arriba, para que nunca se corte una sesión por
+sorpresa. En Android el sistema pide confirmar. Una copia sin instalar en Windows no se
+actualiza.
+
+Nada llega a los equipos hasta que lo publicas:
+
+1. Sube el número en `BUILD` de `src/gsmdesk_update.rs` y en el `+N` de `version` de
+   `flutter/pubspec.yaml`. Tienen que ser iguales.
+2. Compila el exe y la APK con ese código y descárgalos.
+3. Pruébalos, y publica:
+
+```bash
+gsmdesk/publicar-actualizacion.sh 69 "1.4.9 (69)" CARPETA_EXE CARPETA_APK "Qué cambió"
+```
+
+El script firma un manifiesto con las sumas SHA-256 de cada archivo y crea una Release
+`gsm-69` en GitHub. La app solo instala lo que coincide con esa firma, comprobada con la
+clave pública de `src/gsmdesk_update.rs`.
+
+La llave privada está en `firma-actualizaciones\privada.pem`, fuera del repositorio.
+Quien la tenga puede instalar programas en todos los equipos con GSMDesk: nunca la subas
+a GitHub ni la compartas. Si se pierde, los equipos dejan de actualizarse solos y hay que
+instalarles a mano una versión con otra clave pública.
+
 ## 4. Traer actualizaciones de RustDesk
 
 El remoto `upstream` ya apunta a RustDesk y `origin` a GaryRuiz/GSMDesk.

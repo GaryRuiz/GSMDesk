@@ -43,6 +43,8 @@ mod clipboard;
 pub mod core_main;
 mod custom_server;
 mod gsmdesk;
+#[cfg(feature = "flutter")]
+mod gsmdesk_update;
 mod lang;
 #[cfg(not(any(target_os = "android", target_os = "ios")))]
 mod port_forward;
