@@ -75,35 +75,68 @@ class HomePageState extends State<HomePage> {
         child: Scaffold(
           // backgroundColor: MyTheme.grayBg,
           appBar: AppBar(
-            centerTitle: true,
+            centerTitle: false,
+            titleSpacing: 14,
             title: appTitle(),
-            actions: _pages.elementAt(_selectedIndex).appBarActions,
+            actions: [
+              buildThemeToggle(context),
+              ..._pages.elementAt(_selectedIndex).appBarActions,
+            ],
+            bottom: PreferredSize(
+              preferredSize: const Size.fromHeight(2),
+              child: Container(
+                  height: 2,
+                  decoration:
+                      const BoxDecoration(gradient: MyTheme.gsmSignalLine)),
+            ),
           ),
-          bottomNavigationBar: BottomNavigationBar(
-            key: navigationBarKey,
-            items: _pages
-                .map((page) =>
-                    BottomNavigationBarItem(icon: page.icon, label: page.title))
-                .toList(),
-            currentIndex: _selectedIndex,
-            type: BottomNavigationBarType.fixed,
-            selectedItemColor: MyTheme.accent, //
-            unselectedItemColor: MyTheme.darkGray,
-            onTap: (index) => setState(() {
-              // close chat overlay when go chat page
-              if (_selectedIndex != index) {
-                _selectedIndex = index;
-                if (isChatPageCurrentTab) {
-                  gFFI.chatModel.hideChatIconOverlay();
-                  gFFI.chatModel.hideChatWindowOverlay();
-                  gFFI.chatModel.mobileClearClientUnread(
-                      gFFI.chatModel.currentKey.connId);
+          bottomNavigationBar: DecoratedBox(
+            decoration: BoxDecoration(
+                border:
+                    Border(top: BorderSide(color: MyTheme.gsmLine(context)))),
+            child: BottomNavigationBar(
+              key: navigationBarKey,
+              items: _pages
+                  .map((page) => BottomNavigationBarItem(
+                      icon: page.icon, label: page.title))
+                  .toList(),
+              currentIndex: _selectedIndex,
+              type: BottomNavigationBarType.fixed,
+              elevation: 0,
+              iconSize: 22,
+              selectedFontSize: 12,
+              unselectedFontSize: 12,
+              backgroundColor: Theme.of(context).colorScheme.background,
+              selectedItemColor: MyTheme.accent, //
+              unselectedItemColor: MyTheme.gsmMuted(context),
+              onTap: (index) => setState(() {
+                // close chat overlay when go chat page
+                if (_selectedIndex != index) {
+                  _selectedIndex = index;
+                  if (isChatPageCurrentTab) {
+                    gFFI.chatModel.hideChatIconOverlay();
+                    gFFI.chatModel.hideChatWindowOverlay();
+                    gFFI.chatModel.mobileClearClientUnread(
+                        gFFI.chatModel.currentKey.connId);
+                  }
                 }
-              }
-            }),
+              }),
+            ),
           ),
           body: _pages.elementAt(_selectedIndex),
         ));
+  }
+
+  /// GSMDesk: switches between the light and the dark theme, as on desktop.
+  Widget buildThemeToggle(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return IconButton(
+      tooltip: translate(isDark ? 'Light' : 'Dark'),
+      icon: Icon(isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
+          size: 20),
+      onPressed: () =>
+          MyTheme.changeDarkMode(isDark ? ThemeMode.light : ThemeMode.dark),
+    );
   }
 
   Widget appTitle() {
@@ -150,7 +183,20 @@ class HomePageState extends State<HomePage> {
         ],
       );
     }
-    return Text(bind.mainGetAppNameSync());
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        loadIcon(26),
+        const SizedBox(width: 8),
+        Text(
+          bind.mainGetAppNameSync(),
+          style: const TextStyle(
+              fontFamily: MyTheme.fontDisplay,
+              fontWeight: FontWeight.w700,
+              fontSize: 19),
+        ),
+      ],
+    );
   }
 }
 

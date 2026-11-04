@@ -16,6 +16,7 @@ import '../../common/widgets/autocomplete.dart';
 import '../../consts.dart';
 import '../../models/model.dart';
 import '../../models/platform_model.dart';
+import '../widgets/gsm_widgets.dart';
 import 'home_page.dart';
 
 /// Connection page for connecting to a remote peer.
@@ -148,20 +149,24 @@ class _ConnectionPageState extends State<ConnectionPage> {
   /// UI for the remote ID TextField.
   /// Search for a peer and connect to it if the id exists.
   Widget _buildRemoteIDTextField() {
-    final w = SizedBox(
-      height: 84,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 2),
-        child: Ink(
-          decoration: BoxDecoration(
-            color: Theme.of(context).cardColor,
-            borderRadius: BorderRadius.all(Radius.circular(13)),
-          ),
-          child: Row(
+    final w = GsmCard(
+      margin: const EdgeInsets.fromLTRB(2, 10, 2, 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          GsmSectionLabel(translate('Control Remote Desktop'),
+              icon: const Icon(Icons.connected_tv)),
+          Container(
+            decoration: BoxDecoration(
+              color: Theme.of(context).scaffoldBackgroundColor,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: MyTheme.gsmLine(context)),
+            ),
+            child: Row(
             children: <Widget>[
               Expanded(
                 child: Container(
-                  padding: const EdgeInsets.only(left: 16, right: 16),
+                  padding: const EdgeInsets.only(left: 12, right: 4),
                   child: RawAutocomplete<Peer>(
                     optionsBuilder: (TextEditingValue textEditingValue) {
                       if (textEditingValue.text == '') {
@@ -222,7 +227,7 @@ class _ConnectionPageState extends State<ConnectionPage> {
                       return AutoSizeTextField(
                         controller: fieldTextEditingController,
                         focusNode: fieldFocusNode,
-                        minFontSize: 18,
+                        minFontSize: 16,
                         autocorrect: false,
                         enableSuggestions: false,
                         keyboardType: TextInputType.visiblePassword,
@@ -230,27 +235,26 @@ class _ConnectionPageState extends State<ConnectionPage> {
                         onChanged: (String text) {
                           _idController.id = text;
                         },
-                        style: const TextStyle(
-                          fontFamily: 'WorkSans',
-                          fontWeight: FontWeight.bold,
-                          fontSize: 30,
-                          color: MyTheme.idColor,
+                        style: TextStyle(
+                          fontFamily: MyTheme.fontMono,
+                          fontWeight: FontWeight.w500,
+                          fontSize: 22,
+                          letterSpacing: 1,
+                          color: MyTheme.gsmSignal(context),
                         ),
                         decoration: InputDecoration(
-                          labelText: translate('Remote ID'),
-                          // hintText: 'Enter your remote ID',
+                          hintText: translate('Enter Remote ID'),
+                          hintStyle: TextStyle(
+                            fontFamily: MyTheme.fontText,
+                            fontWeight: FontWeight.normal,
+                            fontSize: 15,
+                            letterSpacing: 0,
+                            color: MyTheme.gsmMuted(context),
+                          ),
                           border: InputBorder.none,
-                          helperStyle: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                            color: MyTheme.darkGray,
-                          ),
-                          labelStyle: const TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 16,
-                            letterSpacing: 0.2,
-                            color: MyTheme.darkGray,
-                          ),
+                          isDense: true,
+                          contentPadding:
+                              const EdgeInsets.symmetric(vertical: 11),
                         ),
                         inputFormatters: [IDTextInputFormatter()],
                         onSubmitted: (_) {
@@ -332,20 +336,23 @@ class _ConnectionPageState extends State<ConnectionPage> {
                             _idController.clear();
                           });
                         },
-                        icon: Icon(Icons.clear, color: MyTheme.darkGray)),
+                        icon: Icon(Icons.clear,
+                            color: MyTheme.gsmMuted(context), size: 20)),
                   )),
-              SizedBox(
-                width: 60,
-                height: 60,
-                child: IconButton(
-                  icon: const Icon(Icons.arrow_forward,
-                      color: MyTheme.darkGray, size: 45),
-                  onPressed: onConnect,
-                ),
-              ),
             ],
           ),
-        ),
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            height: 42,
+            child: ElevatedButton(
+              onPressed: onConnect,
+              child: Text(translate('Connect'),
+                  style: const TextStyle(
+                      fontSize: 14, fontWeight: FontWeight.w600)),
+            ),
+          ),
+        ],
       ),
     );
     final child = Column(children: [

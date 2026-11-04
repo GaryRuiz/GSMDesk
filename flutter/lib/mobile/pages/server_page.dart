@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_hbb/desktop/pages/desktop_home_page.dart';
 import 'package:flutter_hbb/mobile/widgets/dialog.dart';
+import 'package:flutter_hbb/mobile/widgets/gsm_widgets.dart';
 import 'package:flutter_hbb/models/chat_model.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
@@ -245,24 +246,31 @@ class ServiceNotRunningNotification extends StatelessWidget {
         titleIcon:
             const Icon(Icons.warning_amber_sharp, color: Colors.redAccent),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(translate("android_start_service_tip"),
-                    style:
-                        const TextStyle(fontSize: 12, color: MyTheme.darkGray))
-                .marginOnly(bottom: 8),
-            ElevatedButton.icon(
-                icon: const Icon(Icons.play_arrow),
-                onPressed: () {
-                  if (gFFI.userModel.userName.value.isEmpty &&
-                      bind.mainGetLocalOption(key: "show-scam-warning") !=
-                          "N") {
-                    showScamWarning(context, serverModel);
-                  } else {
-                    serverModel.toggleService();
-                  }
-                },
-                label: Text(translate("Start service")))
+                    style: TextStyle(
+                        fontSize: 13,
+                        height: 1.4,
+                        color: MyTheme.gsmMuted(context)))
+                .marginOnly(bottom: 12),
+            SizedBox(
+              height: 42,
+              child: ElevatedButton.icon(
+                  icon: const Icon(Icons.play_arrow),
+                  onPressed: () {
+                    if (gFFI.userModel.userName.value.isEmpty &&
+                        bind.mainGetLocalOption(key: "show-scam-warning") !=
+                            "N") {
+                      showScamWarning(context, serverModel);
+                    } else {
+                      serverModel.toggleService();
+                    }
+                  },
+                  label: Text(translate("Start service"),
+                      style: const TextStyle(
+                          fontSize: 14, fontWeight: FontWeight.w600))),
+            )
           ],
         ));
   }
@@ -322,8 +330,8 @@ class ScamWarningDialogState extends State<ScamWarningDialog> {
                 begin: Alignment.topRight,
                 end: Alignment.bottomLeft,
                 colors: [
-                  Color(0xffe242bc),
-                  Color(0xfff4727c),
+                  MyTheme.accent,
+                  Color(0xFF76181F),
                 ],
               ),
             ),
@@ -412,7 +420,8 @@ class ScamWarningDialogState extends State<ScamWarningDialog> {
                                 }
                               },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blueAccent,
+                          backgroundColor: Colors.white,
+                          foregroundColor: MyTheme.accent,
                         ),
                         child: Text(
                           isButtonLocked
@@ -435,7 +444,8 @@ class ScamWarningDialogState extends State<ScamWarningDialog> {
                           Navigator.of(context).pop();
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blueAccent,
+                          backgroundColor: Colors.white24,
+                          foregroundColor: Colors.white,
                         ),
                         child: Text(
                           translate("Decline"),
@@ -462,112 +472,235 @@ class ScamWarningDialogState extends State<ScamWarningDialog> {
 
 class ServerInfo extends StatelessWidget {
   final model = gFFI.serverModel;
-  final emptyController = TextEditingController(text: "-");
 
   ServerInfo({Key? key}) : super(key: key);
+
+  void copyToClipboard(String value) {
+    Clipboard.setData(ClipboardData(text: value));
+    showToast(translate('Copied'));
+  }
+
+  Widget _buildStatus(BuildContext context, ServerModel serverModel) {
+    final Widget indicator;
+    final String text;
+    if (serverModel.connectStatus == -1) {
+      indicator = const Icon(Icons.warning_amber_sharp,
+          color: MyTheme.accent, size: 16);
+      text = translate('not_ready_status');
+    } else if (serverModel.connectStatus == 0) {
+      indicator = const SizedBox(
+          width: 14,
+          height: 14,
+          child: CircularProgressIndicator(strokeWidth: 2));
+      text = translate('connecting_status');
+    } else {
+      indicator = Container(
+        width: 8,
+        height: 8,
+        margin: const EdgeInsets.symmetric(horizontal: 3),
+        decoration:
+            BoxDecoration(color: MyTheme.gsmOk(context), shape: BoxShape.circle),
+      );
+      text = translate('Ready');
+    }
+    return Row(children: [
+      indicator,
+      const SizedBox(width: 8),
+      Expanded(
+        child: Text(text,
+            style: TextStyle(fontSize: 13, color: MyTheme.gsmMuted(context))),
+      ),
+    ]);
+  }
 
   @override
   Widget build(BuildContext context) {
     final serverModel = Provider.of<ServerModel>(context);
-
-    const Color colorPositive = Colors.green;
-    const Color colorNegative = Colors.red;
-    const double iconMarginRight = 15;
-    const double iconSize = 24;
-    const TextStyle textStyleHeading = TextStyle(
-        fontSize: 16.0, fontWeight: FontWeight.bold, color: Colors.grey);
-    const TextStyle textStyleValue =
-        TextStyle(fontSize: 25.0, fontWeight: FontWeight.bold);
-
-    void copyToClipboard(String value) {
-      Clipboard.setData(ClipboardData(text: value));
-      showToast(translate('Copied'));
-    }
-
-    Widget ConnectionStateNotification() {
-      if (serverModel.connectStatus == -1) {
-        return Row(children: [
-          const Icon(Icons.warning_amber_sharp,
-                  color: colorNegative, size: iconSize)
-              .marginOnly(right: iconMarginRight),
-          Expanded(child: Text(translate('not_ready_status')))
-        ]);
-      } else if (serverModel.connectStatus == 0) {
-        return Row(children: [
-          SizedBox(width: 20, height: 20, child: CircularProgressIndicator())
-              .marginOnly(left: 4, right: iconMarginRight),
-          Expanded(child: Text(translate('connecting_status')))
-        ]);
-      } else {
-        return Row(children: [
-          const Icon(Icons.check, color: colorPositive, size: iconSize)
-              .marginOnly(right: iconMarginRight),
-          Expanded(child: Text(translate('Ready')))
-        ]);
-      }
-    }
-
     final showOneTime = serverModel.approveMode != 'click' &&
         serverModel.verificationMethod != kUsePermanentPassword;
-    return PaddingCard(
-        title: translate('Your Device'),
+    final idStyle = TextStyle(
+      fontFamily: MyTheme.fontMono,
+      fontSize: 26,
+      fontWeight: FontWeight.w500,
+      letterSpacing: 1,
+      color: MyTheme.gsmSignal(context),
+    );
+    return Column(children: [
+      GsmCard(
         child: Column(
-          // ID
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Row(children: [
-              const Icon(Icons.perm_identity,
-                      color: Colors.grey, size: iconSize)
-                  .marginOnly(right: iconMarginRight),
-              Text(
-                translate('ID'),
-                style: textStyleHeading,
-              )
-            ]),
-            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-              Text(
-                model.serverId.value.text,
-                style: textStyleValue,
+            GsmSectionLabel(translate('ID'),
+                icon: const Icon(Icons.badge_outlined)),
+            Text(model.serverId.value.text, style: idStyle),
+            const SizedBox(height: 8),
+            _buildStatus(context, serverModel),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 40,
+              child: OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  backgroundColor: Colors.transparent,
+                  foregroundColor:
+                      Theme.of(context).textTheme.bodyMedium?.color,
+                  side: BorderSide(color: MyTheme.gsmLine(context)),
+                ),
+                icon: const Icon(Icons.copy, size: 16),
+                label: Text(
+                  translate(showOneTime ? 'Copy ID and password' : 'Copy ID'),
+                  style: const TextStyle(
+                      fontSize: 14, fontWeight: FontWeight.w600),
+                ),
+                onPressed: () {
+                  final lines = [
+                    bind.mainGetAppNameSync(),
+                    '${translate("ID")}: ${model.serverId.value.text.trim()}',
+                    if (showOneTime && model.serverPasswd.value.text.isNotEmpty)
+                      '${translate("Password")}: ${model.serverPasswd.value.text.trim()}',
+                  ];
+                  copyToClipboard(lines.join('\n'));
+                },
               ),
-              IconButton(
-                  visualDensity: VisualDensity.compact,
-                  icon: Icon(Icons.copy_outlined),
-                  onPressed: () {
-                    copyToClipboard(model.serverId.value.text.trim());
-                  })
-            ]).marginOnly(left: 39, bottom: 10),
-            // Password
-            Row(children: [
-              const Icon(Icons.lock_outline, color: Colors.grey, size: iconSize)
-                  .marginOnly(right: iconMarginRight),
-              Text(
-                translate('One-time Password'),
-                style: textStyleHeading,
-              )
-            ]),
-            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-              Text(
-                !showOneTime ? '-' : model.serverPasswd.value.text,
-                style: textStyleValue,
-              ),
-              !showOneTime
-                  ? SizedBox.shrink()
-                  : Row(children: [
-                      IconButton(
-                          visualDensity: VisualDensity.compact,
-                          icon: const Icon(Icons.refresh),
-                          onPressed: () => bind.mainUpdateTemporaryPassword()),
-                      IconButton(
-                          visualDensity: VisualDensity.compact,
-                          icon: Icon(Icons.copy_outlined),
-                          onPressed: () {
-                            copyToClipboard(
-                                model.serverPasswd.value.text.trim());
-                          })
-                    ])
-            ]).marginOnly(left: 40, bottom: 15),
-            ConnectionStateNotification()
+            ),
           ],
-        ));
+        ),
+      ),
+      if (serverModel.verificationMethod == kUsePermanentPassword)
+        const _AccessCard()
+      else
+        GsmCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              GsmSectionLabel(translate('One-time Password'),
+                  icon: const Icon(Icons.lock_outline)),
+              Row(children: [
+                Expanded(
+                  child: Text(
+                    showOneTime ? model.serverPasswd.value.text : '-',
+                    style: idStyle.copyWith(
+                        fontSize: 20,
+                        color: Theme.of(context).textTheme.bodyMedium?.color),
+                  ),
+                ),
+                if (showOneTime) ...[
+                  IconButton(
+                      visualDensity: VisualDensity.compact,
+                      icon: const Icon(Icons.refresh),
+                      onPressed: () => bind.mainUpdateTemporaryPassword()),
+                  IconButton(
+                      visualDensity: VisualDensity.compact,
+                      icon: const Icon(Icons.copy_outlined),
+                      onPressed: () => copyToClipboard(
+                          model.serverPasswd.value.text.trim())),
+                ],
+              ]),
+            ],
+          ),
+        ),
+    ]);
+  }
+}
+
+/// GSMDesk: explains whether incoming connections need approval and lets the
+/// user set or remove the permanent password, as on the desktop home page.
+class _AccessCard extends StatefulWidget {
+  const _AccessCard({Key? key}) : super(key: key);
+
+  @override
+  State<_AccessCard> createState() => _AccessCardState();
+}
+
+class _AccessCardState extends State<_AccessCard> {
+  bool _passwordSet = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _refresh();
+  }
+
+  Future<void> _refresh() async {
+    final isSet =
+        (await bind.mainGetCommon(key: "permanent-password-set")) == "true";
+    if (mounted && isSet != _passwordSet) {
+      setState(() => _passwordSet = isSet);
+    }
+  }
+
+  void _removePassword() {
+    CommonConfirmDialog(
+        gFFI.dialogManager, translate('gsm-access-click-tip'), () async {
+      if (await bind.mainSetPermanentPasswordWithResult(password: '')) {
+        await _refresh();
+        showToast(translate('gsm-password-removed'));
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final textColor = Theme.of(context).textTheme.bodyMedium?.color;
+    final actionStyle = TextButton.styleFrom(
+      foregroundColor: MyTheme.accent,
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      minimumSize: const Size(0, 36),
+      textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+    );
+    return GsmCard(
+      borderColor: _passwordSet ? MyTheme.gsmOk(context).withOpacity(0.6) : null,
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          GsmSectionLabel(translate('gsm-access-section'),
+              icon: const Icon(Icons.shield_outlined)),
+          Row(children: [
+            Icon(_passwordSet ? Icons.key : Icons.touch_app_outlined,
+                size: 18,
+                color: _passwordSet
+                    ? MyTheme.gsmOk(context)
+                    : MyTheme.gsmSignal(context)),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                translate(_passwordSet
+                    ? 'gsm-access-password-title'
+                    : 'gsm-access-click-title'),
+                style: TextStyle(
+                    fontSize: 15, fontWeight: FontWeight.w600, color: textColor),
+              ),
+            ),
+          ]),
+          const SizedBox(height: 6),
+          Text(
+            translate(_passwordSet
+                ? 'gsm-access-password-tip'
+                : 'gsm-access-click-tip'),
+            style: TextStyle(
+                fontSize: 13, height: 1.4, color: MyTheme.gsmMuted(context)),
+          ),
+          if (!bind.isDisableSettings() &&
+              !isChangePermanentPasswordDisabled()) ...[
+            const SizedBox(height: 4),
+            Wrap(spacing: 4, children: [
+              TextButton(
+                style: actionStyle,
+                onPressed: () => setPasswordDialog(notEmptyCallback: _refresh),
+                child: Text(translate(
+                    _passwordSet ? 'Change Password' : 'gsm-create-password')),
+              ),
+              if (_passwordSet)
+                TextButton(
+                  style: actionStyle,
+                  onPressed: _removePassword,
+                  child: Text(translate('gsm-remove-password')),
+                ),
+            ]),
+          ],
+        ],
+      ),
+    );
   }
 }
 
@@ -595,17 +728,8 @@ class _PermissionCheckerState extends State<PermissionChecker> {
         !allowPermChangeInAcceptWindow;
     return PaddingCard(
         title: translate("Permissions"),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          serverModel.mediaOk && !hideStopService
-              ? ElevatedButton.icon(
-                      style: ButtonStyle(
-                          backgroundColor:
-                              MaterialStateProperty.all(Colors.red)),
-                      icon: const Icon(Icons.stop),
-                      onPressed: serverModel.toggleService,
-                      label: Text(translate("Stop service")))
-                  .marginOnly(bottom: 8)
-              : SizedBox.shrink(),
+        titleIcon: const Icon(Icons.tune),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           if (!hideStopService || !serverModel.mediaOk)
             PermissionRow(
                 translate("Screen Capture"),
@@ -644,6 +768,22 @@ class _PermissionCheckerState extends State<PermissionChecker> {
             serverModel.toggleClipboard,
             enabled: !permissionChangeLocked,
           ),
+          if (serverModel.mediaOk && !hideStopService)
+            SizedBox(
+              height: 40,
+              child: OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  backgroundColor: Colors.transparent,
+                  foregroundColor: MyTheme.accent,
+                  side: const BorderSide(color: MyTheme.accent50),
+                ),
+                icon: const Icon(Icons.stop, size: 18),
+                onPressed: serverModel.toggleService,
+                label: Text(translate("Stop service"),
+                    style: const TextStyle(
+                        fontSize: 14, fontWeight: FontWeight.w600)),
+              ),
+            ).marginOnly(top: 8, bottom: 2),
         ]));
   }
 }
@@ -662,8 +802,9 @@ class PermissionRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return SwitchListTile(
         visualDensity: VisualDensity.compact,
+        dense: true,
         contentPadding: EdgeInsets.all(0),
-        title: Text(name),
+        title: Text(name, style: const TextStyle(fontSize: 14)),
         value: isOk,
         onChanged: enabled
             ? (bool value) {
@@ -817,40 +958,15 @@ class PaddingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final children = [child];
-    if (title != null) {
-      children.insert(
-          0,
-          Padding(
-              padding: const EdgeInsets.fromLTRB(0, 5, 0, 8),
-              child: Row(
-                children: [
-                  titleIcon?.marginOnly(right: 10) ?? const SizedBox.shrink(),
-                  Expanded(
-                    child: Text(title!,
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleLarge
-                            ?.merge(TextStyle(fontWeight: FontWeight.bold))),
-                  )
-                ],
-              )));
-    }
-    return SizedBox(
-        width: double.maxFinite,
-        child: Card(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(13),
-          ),
-          margin: const EdgeInsets.fromLTRB(12.0, 10.0, 12.0, 0),
-          child: Padding(
-            padding:
-                const EdgeInsets.symmetric(vertical: 15.0, horizontal: 20.0),
-            child: Column(
-              children: children,
-            ),
-          ),
-        ));
+    return GsmCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (title != null) GsmSectionLabel(title!, icon: titleIcon),
+          child,
+        ],
+      ),
+    );
   }
 }
 

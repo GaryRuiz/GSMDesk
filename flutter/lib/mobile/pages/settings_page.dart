@@ -19,6 +19,7 @@ import '../../models/model.dart';
 import '../../models/platform_model.dart';
 import '../widgets/deploy_dialog.dart';
 import '../widgets/dialog.dart';
+import '../widgets/gsm_widgets.dart';
 import 'home_page.dart';
 import 'scan_page.dart';
 
@@ -680,6 +681,8 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
     final hideSecuritySettings =
         bind.mainGetBuildinOption(key: kOptionHideSecuritySetting) == 'Y';
     final settings = SettingsList(
+      lightTheme: gsmSettingsTheme(context),
+      darkTheme: gsmSettingsTheme(context),
       sections: [
         customClientSection,
         if (!bind.isDisableAccount())
@@ -1161,7 +1164,10 @@ class __DisplayPageState extends State<_DisplayPage> {
         title: Text(translate('Display Settings')),
         centerTitle: true,
       ),
-      body: SettingsList(sections: [
+      body: SettingsList(
+          lightTheme: gsmSettingsTheme(context),
+          darkTheme: gsmSettingsTheme(context),
+          sections: [
         SettingsSection(
           tiles: [
             _getPopupDialogRadioEntry(

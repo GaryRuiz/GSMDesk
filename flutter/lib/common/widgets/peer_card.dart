@@ -84,6 +84,12 @@ class _PeerCardState extends State<_PeerCard>
     final peer = super.widget.peer;
     return Card(
         margin: EdgeInsets.symmetric(horizontal: 2),
+        elevation: 0,
+        color: MyTheme.gsmCard(context),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+          side: BorderSide(color: MyTheme.gsmLine(context)),
+        ),
         child: gestureDetector(
           child: Container(
               padding: EdgeInsets.only(left: 12, top: 8, bottom: 8),
@@ -171,7 +177,9 @@ class _PeerCardState extends State<_PeerCard>
         Expanded(
           child: Container(
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.background,
+              color: isPortrait
+                  ? Colors.transparent
+                  : Theme.of(context).colorScheme.background,
               borderRadius: BorderRadius.only(
                 topRight: Radius.circular(_tileRadius),
                 bottomRight: Radius.circular(_tileRadius),
@@ -201,7 +209,7 @@ class _PeerCardState extends State<_PeerCard>
                                 alignment: Alignment.centerLeft,
                                 child: Text(
                                   name,
-                                  style: isPortrait ? null : greyStyle,
+                                  style: greyStyle,
                                   textAlign: TextAlign.start,
                                   overflow: TextOverflow.ellipsis,
                                 ),

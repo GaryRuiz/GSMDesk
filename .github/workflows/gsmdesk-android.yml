@@ -153,6 +153,14 @@ jobs:
           name: bridge-artifact
           path: ./
 
+      # Fails in a few minutes instead of at the end of the build.
+      - name: Check the Dart code of the phone screens
+        if: matrix.job.arch == 'arm64'
+        working-directory: flutter
+        run: |
+          flutter pub get
+          dart analyze --no-fatal-warnings lib/mobile lib/common/widgets/peer_card.dart lib/common.dart
+
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9 # v1
         with:
