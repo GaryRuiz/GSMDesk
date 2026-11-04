@@ -31,7 +31,10 @@ class SettingsPage extends StatefulWidget implements PageShape {
   final icon = Icon(Icons.settings);
 
   @override
-  final appBarActions = bind.isDisableSettings() ? [] : [ScanButton()];
+  // GSMDesk: the server is built in, so there is no server QR code to scan.
+  final appBarActions = bind.isDisableSettings() || bind.isCustomClient()
+      ? []
+      : [ScanButton()];
 
   @override
   State<SettingsPage> createState() => _SettingsState();
@@ -678,6 +681,9 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
     ));
 
     final disabledSettings = bind.isDisableSettings();
+    // GSMDesk has a built-in server and no accounts, so these options either do
+    // nothing or would break the connection.
+    final customClient = bind.isCustomClient();
     final hideSecuritySettings =
         bind.mainGetBuildinOption(key: kOptionHideSecuritySetting) == 'Y';
     final settings = SettingsList(
@@ -685,7 +691,7 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
       darkTheme: gsmSettingsTheme(context),
       sections: [
         customClientSection,
-        if (!bind.isDisableAccount())
+        if (!bind.isDisableAccount() && !customClient)
           SettingsSection(
             title: Text(translate('Account')),
             tiles: [
@@ -715,7 +721,7 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
             ],
           ),
         SettingsSection(title: Text(translate("Settings")), tiles: [
-          if (!disabledSettings && !_hideNetwork && !_hideServer)
+          if (!disabledSettings && !_hideNetwork && !_hideServer && !customClient)
             SettingsTile(
                 title: Text(translate('ID/Relay Server')),
                 leading: Icon(Icons.cloud),
@@ -732,14 +738,17 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
                 onPressed: (context) {
                   changeSocks5Proxy();
                 }),
-          if (isAndroid && !bind.isOutgoingOnly())
+          if (isAndroid && !bind.isOutgoingOnly() && !customClient)
             SettingsTile(
                 title: Text(translate('Deploy')),
                 leading: Icon(Icons.cloud_upload),
                 onPressed: (context) {
                   showDeployDialog();
                 }),
-          if (!disabledSettings && !_hideNetwork && !_hideWebSocket)
+          if (!disabledSettings &&
+              !_hideNetwork &&
+              !_hideWebSocket &&
+              !customClient)
             SettingsTile.switchTile(
               title: Text(translate('Use WebSocket')),
               initialValue: _allowWebSocket,
@@ -754,7 +763,7 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
                       });
                     },
             ),
-          if (!_isUsingPublicServer)
+          if (!_isUsingPublicServer && !customClient)
             SettingsTile.switchTile(
               title: Text(translate('Allow insecure TLS fallback')),
               initialValue: _allowInsecureTlsFallback,
@@ -830,7 +839,7 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
               showThemeSettings(gFFI.dialogManager);
             },
           ),
-          if (!bind.isDisableAccount())
+          if (!bind.isDisableAccount() && !customClient)
             SettingsTile.switchTile(
               title: Text(translate('note-at-conn-end-tip')),
               initialValue: _allowAskForNoteAtEndOfConnection,
@@ -996,7 +1005,11 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
         ),
       ],
     );
-    return settings;
+    // GSMDesk: settings_ui fixes its tiles at 18, larger than every other screen.
+    return MediaQuery(
+      data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(0.85)),
+      child: settings,
+    );
   }
 
   Future<bool> canStartOnBoot() async {
