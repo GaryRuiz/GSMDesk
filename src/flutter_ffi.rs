@@ -3087,6 +3087,8 @@ pub mod server_side {
         custom_client_config: JString,
     ) {
         log::debug!("startServer from jvm");
+        // The service can start on boot, before Flutter calls initialize().
+        crate::gsmdesk::apply();
         let mut env = env;
         if let Ok(app_dir) = env.get_string(&app_dir) {
             *config::APP_DIR.write().unwrap() = app_dir.into();

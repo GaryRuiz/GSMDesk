@@ -127,6 +127,47 @@ Si subes una etiqueta `v1.4.9-gsm1` (por ejemplo), se crea además una *Release*
 Sin `GSMDESK_SERVER`/`GSMDESK_KEY`, la compilación usa los servidores públicos de
 RustDesk. Sirve solo para pruebas.
 
+## 3b. Compilar para Android (GitHub Actions)
+
+1. Usa las mismas variables `GSMDESK_SERVER` y `GSMDESK_KEY` del paso anterior.
+2. En *Actions → GSMDesk Android → Run workflow*. Tarda unos 45-60 minutos.
+3. Descarga la APK desde la ejecución:
+   - `GSMDesk-<versión>-arm64.apk`: casi todos los celulares actuales.
+   - `GSMDesk-<versión>-armv7.apk`: celulares antiguos de 32 bits.
+
+### Firma de la APK
+
+Android solo actualiza una app si la nueva APK trae la misma firma. Para eso, el
+repositorio necesita estos secretos (*Settings → Secrets and variables → Actions →
+Secrets*):
+
+- `ANDROID_SIGNING_KEY`: la llave `.p12` en base64.
+- `ANDROID_ALIAS`: el alias de la llave.
+- `ANDROID_KEY_STORE_PASSWORD`: su contraseña.
+
+Sin ellos la APK sale con una firma de prueba que cambia en cada compilación, así
+que para instalar una versión nueva hay que desinstalar la anterior.
+
+La llave se guarda fuera del repositorio, porque el código es público. Si se pierde,
+cada celular tendrá que desinstalar GSMDesk e instalarlo de nuevo.
+
+### Qué hace la app en el celular
+
+- Conecta y controla PCs con GSMDesk, usando el mismo servidor.
+- Recibe conexiones: un PC puede ver el celular y controlarlo. Para esto la persona
+  activa el servicio en la app y da los permisos de captura de pantalla y de
+  accesibilidad.
+- En Android 13 o superior, las apps instaladas desde una APK tienen bloqueada la
+  accesibilidad al principio. Se habilita en *Ajustes → Aplicaciones → GSMDesk →
+  ⋮ → Permitir ajustes restringidos*.
+- El límite de la licencia no se aplica en el celular, que abre una sesión a la vez.
+- iPhone no está incluido: necesita una cuenta de desarrollador de Apple, y iOS no
+  permite que otro equipo controle el teléfono.
+
+El paquete de Android es `com.gsmdesk.app`. El código Kotlin sigue en
+`com.carriez.flutter_hbb` a propósito, para que las actualizaciones de RustDesk
+sigan entrando sin conflictos. El usuario no lo ve.
+
 ## 4. Traer actualizaciones de RustDesk
 
 El remoto `upstream` ya apunta a RustDesk y `origin` a GaryRuiz/GSMDesk.
@@ -156,6 +197,6 @@ con `git rm`.
 ## Pendiente
 
 - Certificado de firma de código, para que SmartScreen y los antivirus no lo bloqueen.
-- Android, macOS y Linux: ids de paquete (`com.carriez.*`), iconos y compilación.
+- macOS y Linux: ids de paquete, iconos y compilación.
 - La librería interna sigue llamándose `librustdesk.dll`. El usuario no la ve;
   el ejecutable ya sale como `GSMDesk.exe`.

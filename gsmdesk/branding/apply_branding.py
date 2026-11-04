@@ -14,7 +14,7 @@ import io
 import sys
 from pathlib import Path
 
-from PIL import Image
+from PIL import Image, ImageChops, ImageDraw
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
@@ -22,6 +22,14 @@ SOURCE = HERE / "source"
 
 ICO_APP = [16, 20, 24, 32, 40, 48, 64, 128, 256]
 ICO_TRAY = [16, 20, 24, 32, 48]
+# density, launcher icon, adaptive foreground, notification icon (pixels)
+ANDROID_DENSITIES = [
+    ("mdpi", 48, 108, 24),
+    ("hdpi", 72, 162, 36),
+    ("xhdpi", 96, 216, 48),
+    ("xxhdpi", 144, 324, 72),
+    ("xxxhdpi", 192, 432, 96),
+]
 
 
 def fail(msg):
@@ -98,6 +106,21 @@ def main():
     save_png(icon, "res/128x128@2x.png", 256)
     save_svg(icon, "res/scalable.svg")
     save_svg(icon, "res/logo.svg")
+
+    print("Android:")
+    res = "flutter/android/app/src/main/res/mipmap-"
+    round_mask = Image.new("L", icon.size, 0)
+    ImageDraw.Draw(round_mask).ellipse((0, 0, icon.width - 1, icon.height - 1), fill=255)
+    tile_box = tuple(round(icon.width * v) for v in (0.04, 0.04, 0.96, 0.948))
+    round_icon = icon.crop(tile_box).resize(icon.size, Image.LANCZOS)
+    round_icon.putalpha(ImageChops.multiply(round_icon.getchannel("A"), round_mask))
+    foreground = Image.open(SOURCE / "android_foreground.png").convert("RGBA")
+    status = Image.open(SOURCE / "android_status.png").convert("RGBA")
+    for dpi, launcher, fg, stat in ANDROID_DENSITIES:
+        save_png(icon, f"{res}{dpi}/ic_launcher.png", launcher)
+        save_png(round_icon, f"{res}{dpi}/ic_launcher_round.png", launcher)
+        save_png(foreground, f"{res}{dpi}/ic_launcher_foreground.png", fg)
+        save_png(status, f"{res}{dpi}/ic_stat_logo.png", stat)
 
     logos = {
         "logo_light.png": "flutter/assets/logo_light.png",

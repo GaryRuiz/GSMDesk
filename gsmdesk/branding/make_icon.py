@@ -11,7 +11,7 @@ Run, then apply_branding.py to spread the result to every icon file:
 
 from pathlib import Path
 
-from PIL import Image, ImageDraw, ImageFilter, ImageFont
+from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageFont
 
 HERE = Path(__file__).resolve().parent
 SOURCE = HERE / "source"
@@ -75,6 +75,12 @@ def draw_icon(size=1024):
     tile.paste(rim, (0, 0), Image.composite(rim, Image.new("RGBA", (tw, th)), rim_mask).getchannel("A"))
     icon.paste(tile, tile_box[:2], rounded_mask((tw, th), (0, 0, tw - 1, th - 1), radius))
 
+    icon.alpha_composite(draw_glyph(s))
+    return icon.resize((size, size), Image.LANCZOS)
+
+
+def draw_glyph(s):
+    """Monitor and phone with a remote cursor, on a transparent s x s canvas."""
     glyph = Image.new("RGBA", (s, s), (0, 0, 0, 0))
     d = ImageDraw.Draw(glyph)
     stroke = int(s * 0.052)
@@ -115,8 +121,35 @@ def draw_icon(size=1024):
     arrow = [(0, 0), (0, 70), (17, 54), (29, 80), (41, 75), (29, 49), (51, 49)]
     d.polygon([(ax + x * k, ay + y * k) for x, y in arrow], fill=WHITE, outline=NAVY + (255,))
 
-    icon.alpha_composite(glyph)
-    return icon.resize((size, size), Image.LANCZOS)
+    return glyph
+
+
+def draw_android_foreground(size=432):
+    """Adaptive icon foreground: the glyph inside Android's safe zone (66/108)."""
+    s = size * 4
+    glyph = draw_glyph(s)
+    glyph = glyph.crop(glyph.getbbox())
+    # 0.50 keeps the glyph's corners inside the safe circle of 0.61.
+    k = 0.50 * s / max(glyph.size)
+    glyph = glyph.resize((round(glyph.width * k), round(glyph.height * k)), Image.LANCZOS)
+    canvas = Image.new("RGBA", (s, s), (0, 0, 0, 0))
+    canvas.alpha_composite(glyph, ((s - glyph.width) // 2, (s - glyph.height) // 2))
+    return canvas.resize((size, size), Image.LANCZOS)
+
+
+def draw_android_status_icon(size=96):
+    """Notification icon: Android only uses its alpha, so white parts of the glyph."""
+    glyph = draw_glyph(size * 4)
+    r, g, b, a = glyph.split()
+    whitish = ImageChops.darker(ImageChops.darker(r, g), b).point(lambda v: 255 if v > 200 else 0)
+    white = Image.new("RGBA", glyph.size, (255, 255, 255, 0))
+    white.putalpha(ImageChops.multiply(a, whitish))
+    white = white.crop(white.getbbox())
+    k = 0.86 * size * 4 / max(white.size)
+    white = white.resize((round(white.width * k), round(white.height * k)), Image.LANCZOS)
+    canvas = Image.new("RGBA", (size * 4, size * 4), (255, 255, 255, 0))
+    canvas.alpha_composite(white, ((canvas.width - white.width) // 2, (canvas.height - white.height) // 2))
+    return canvas.resize((size, size), Image.LANCZOS)
 
 
 def draw_logo(icon, text_color, height=120):
@@ -138,6 +171,8 @@ def main():
     icon.save(SOURCE / "icon.png")
     draw_logo(icon, DARK_TEXT).save(SOURCE / "logo_light.png")
     draw_logo(icon, LIGHT_TEXT).save(SOURCE / "logo_dark.png")
+    draw_android_foreground().save(SOURCE / "android_foreground.png")
+    draw_android_status_icon().save(SOURCE / "android_status.png")
     print(f"Icon and logos written to {SOURCE}")
 
 
