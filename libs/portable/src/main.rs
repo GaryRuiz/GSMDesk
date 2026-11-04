@@ -150,9 +150,6 @@ fn execute(path: PathBuf, args: Vec<String>, _ui: bool) {
     }
 
     cmd.env(APPNAME_RUNTIME_ENV_KEY, exe_name);
-    // GSMDesk: full path of this portable exe, so installing can delete it
-    // (see delete_portable_exe_cmd in src/gsmdesk.rs).
-    cmd.env("GSMDESK_PORTABLE_EXE", &exe);
     if use_null_stdio() {
         cmd.stdin(Stdio::null())
             .stdout(Stdio::null())

@@ -1730,7 +1730,6 @@ ie4uinit.exe -show >nul 2>&1
 {import_config}
 {after_install}
 {install_remote_printer}
-{del_portable}
 {sleep}
     ",
         display_icon = get_custom_icon(&path, &cur_exe).unwrap_or(exe.to_string()),
@@ -1746,8 +1745,6 @@ ie4uinit.exe -show >nul 2>&1
         dels = if debug { "" } else { &dels },
         copy_exe = copy_exe_cmd(&src_exe, &exe, &path)?,
         import_config = get_import_config(&exe),
-        // GSMDesk: remove the downloaded GSMDesk.exe this install came from.
-        del_portable = crate::gsmdesk::delete_portable_exe_cmd(&path),
     );
     run_cmds(cmds, debug, "install")?;
     run_after_run_cmds(silent);
