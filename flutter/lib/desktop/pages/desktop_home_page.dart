@@ -230,12 +230,13 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                 decoration: InputDecoration(
                   border: InputBorder.none,
                   filled: false,
-                  contentPadding: EdgeInsets.only(top: 12, bottom: 12),
+                  isDense: true,
+                  contentPadding: EdgeInsets.only(top: 8, bottom: 8),
                 ),
                 style: TextStyle(
                   fontFamily: MyTheme.fontMono,
                   fontWeight: FontWeight.w500,
-                  fontSize: isIncomingOnly ? 28 : 24,
+                  fontSize: isIncomingOnly ? 24 : 20,
                   letterSpacing: 1,
                   color: MyTheme.gsmSignal(context),
                 ),
@@ -251,11 +252,11 @@ class _DesktopHomePageState extends State<DesktopHomePage>
   Widget buildSectionLabel(BuildContext context, IconData icon, String text) {
     final color = MyTheme.gsmMuted(context);
     return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
+      padding: const EdgeInsets.only(bottom: 5),
       child: Row(
         children: [
-          Icon(icon, size: 15, color: color),
-          const SizedBox(width: 6),
+          Icon(icon, size: 13, color: color),
+          const SizedBox(width: 5),
           Flexible(
             child: Text(
               text.toUpperCase(),
@@ -282,7 +283,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
         onTap: () =>
             MyTheme.changeDarkMode(isDark ? ThemeMode.light : ThemeMode.dark),
         child: Container(
-          padding: const EdgeInsets.all(6),
+          padding: const EdgeInsets.all(5),
           decoration: BoxDecoration(
             color: MyTheme.gsmCard(context),
             borderRadius: BorderRadius.circular(8),
@@ -290,7 +291,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
           ),
           child: Icon(
               isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
-              size: 16,
+              size: 14,
               color: MyTheme.gsmMuted(context)),
         ),
       ),
@@ -306,13 +307,13 @@ class _DesktopHomePageState extends State<DesktopHomePage>
         message: translate('Settings'),
         child: Obx(
           () => CircleAvatar(
-            radius: 15,
+            radius: 12,
             backgroundColor: hover.value
                 ? Theme.of(context).scaffoldBackgroundColor
                 : Theme.of(context).colorScheme.background,
             child: Icon(
               Icons.more_vert_outlined,
-              size: 20,
+              size: 16,
               color: hover.value ? textColor : textColor?.withOpacity(0.5),
             ),
           ),
@@ -442,20 +443,24 @@ class _DesktopHomePageState extends State<DesktopHomePage>
         final showOneTime = model.approveMode != 'click' &&
             model.verificationMethod != kUsePermanentPassword;
         return Container(
-          margin: const EdgeInsets.only(left: 20, right: 16, bottom: 10),
+          margin: const EdgeInsets.only(left: 20, right: 16, bottom: 8),
           width: double.infinity,
-          height: 40,
-          child: ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
+          height: 30,
+          child: OutlinedButton.icon(
+            style: OutlinedButton.styleFrom(
+              backgroundColor: MyTheme.gsmCard(context),
+              foregroundColor: Theme.of(context).textTheme.bodyMedium?.color,
+              side: BorderSide(color: MyTheme.gsmLine(context)),
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10)),
+                  borderRadius: BorderRadius.circular(8)),
             ),
-            icon: const Icon(Icons.copy, size: 16),
+            icon: const Icon(Icons.copy, size: 14),
             label: FittedBox(
               fit: BoxFit.scaleDown,
               child: Text(
                 translate(showOneTime ? 'Copy ID and password' : 'Copy ID'),
-                style: const TextStyle(fontWeight: FontWeight.w600),
+                style:
+                    const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
               ),
             ),
             onPressed: () {
@@ -481,13 +486,15 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     final textColor = Theme.of(context).textTheme.bodyMedium?.color;
     final actionStyle = TextButton.styleFrom(
       foregroundColor: MyTheme.accent,
-      padding: const EdgeInsets.symmetric(horizontal: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 6),
+      minimumSize: const Size(0, 26),
+      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
       textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
     );
     return Obx(() {
       final unattended = _permanentPasswordSet.value;
       return Container(
-        margin: const EdgeInsets.only(left: 20, right: 16, top: 14, bottom: 12),
+        margin: const EdgeInsets.only(left: 20, right: 16, top: 10, bottom: 8),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -510,11 +517,11 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                   Row(
                     children: [
                       Icon(unattended ? Icons.key : Icons.touch_app_outlined,
-                          size: 18,
+                          size: 15,
                           color: unattended
                               ? MyTheme.gsmOk(context)
                               : MyTheme.gsmSignal(context)),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 6),
                       Expanded(
                         child: Text(
                           translate(unattended
@@ -528,7 +535,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                       ),
                     ],
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 4),
                   Text(
                     translate(unattended
                         ? 'gsm-access-password-tip'
@@ -587,7 +594,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
           '${translate('gsm-license-expires')} ${GsmLicense.expires.value}',
       ].join(' · ');
       return Container(
-        margin: const EdgeInsets.only(left: 20, right: 16, top: 4, bottom: 12),
+        margin: const EdgeInsets.only(left: 20, right: 16, top: 4, bottom: 8),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -638,7 +645,9 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                   TextButton(
                     style: TextButton.styleFrom(
                       foregroundColor: MyTheme.accent,
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 6),
+                      minimumSize: const Size(0, 26),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       textStyle: const TextStyle(
                           fontSize: 13, fontWeight: FontWeight.w600),
                     ),
@@ -660,7 +669,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     final isOutgoingOnly = bind.isOutgoingOnly();
     return Padding(
       padding:
-          const EdgeInsets.only(left: 20.0, right: 16, top: 16.0, bottom: 5),
+          const EdgeInsets.only(left: 20.0, right: 16, top: 10.0, bottom: 4),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -672,13 +681,16 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                   alignment: Alignment.centerLeft,
                   child: Text(
                     translate("Your Desktop"),
-                    style: Theme.of(context).textTheme.titleLarge,
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleLarge
+                        ?.copyWith(fontSize: 16),
                   ),
                 ),
             ],
           ),
           SizedBox(
-            height: 10.0,
+            height: 5.0,
           ),
           if (!isOutgoingOnly)
             Text(
@@ -870,8 +882,8 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     }
     final textColor = Theme.of(context).textTheme.bodyMedium?.color;
     return Container(
-      width: 220,
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 18),
+      width: 200,
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: MyTheme.gsmCard(context),
         borderRadius: BorderRadius.circular(13),
@@ -889,18 +901,19 @@ class _DesktopHomePageState extends State<DesktopHomePage>
             style: TextStyle(
                 fontSize: 12.5, height: 1.45, color: textColor?.withOpacity(0.8)),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 10),
           SizedBox(
             width: double.infinity,
-            height: 36,
+            height: 28,
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10)),
+                    borderRadius: BorderRadius.circular(8)),
               ),
               onPressed: action,
               child: Text(translate(button),
-                  style: const TextStyle(fontWeight: FontWeight.w600)),
+                  style: const TextStyle(
+                      fontSize: 14, fontWeight: FontWeight.w600)),
             ),
           ),
         ],
@@ -979,16 +992,16 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                           ? <Widget>[
                               SizedBox(
                                 width: double.infinity,
-                                height: 36,
+                                height: 28,
                                 child: ElevatedButton(
                                   style: ElevatedButton.styleFrom(
                                     shape: RoundedRectangleBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(10)),
+                                        borderRadius: BorderRadius.circular(8)),
                                   ),
                                   onPressed: onPressed,
                                   child: Text(translate(btnText),
                                       style: const TextStyle(
+                                          fontSize: 14,
                                           fontWeight: FontWeight.w600)),
                                 ),
                               )

@@ -3819,7 +3819,7 @@ Widget loadPowered(BuildContext context) {
             style: Theme.of(context)
                 .textTheme
                 .bodySmall
-                ?.copyWith(fontSize: 9, decoration: TextDecoration.underline),
+                ?.copyWith(fontSize: 10, decoration: TextDecoration.underline),
           )),
     ),
   ).marginOnly(top: 6);
@@ -3879,7 +3879,8 @@ class _LogoState extends State<_Logo> {
             },
           );
           return Container(
-            constraints: BoxConstraints(maxWidth: 300, maxHeight: 60),
+            constraints:
+                BoxConstraints(maxWidth: 300, maxHeight: isDesktop ? 36 : 60),
             child: image,
           ).marginOnly(left: 12, right: 12, top: 12);
         }

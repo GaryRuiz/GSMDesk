@@ -38,7 +38,7 @@ class _OnlineStatusWidgetState extends State<OnlineStatusWidget> {
   Timer? _updateTimer;
 
   double get em => 14.0;
-  double? get height => bind.isIncomingOnly() ? null : em * 3;
+  double? get height => bind.isIncomingOnly() ? null : em * 2.5;
 
   void onUsePublicServerGuide() {
     const url = "https://rustdesk.com/pricing";
@@ -328,8 +328,8 @@ class _ConnectionPageState extends State<ConnectionPage>
                   if (widget.side != null) widget.side!,
                 ],
               ),
-            ).marginOnly(top: 22),
-            SizedBox(height: 12),
+            ).marginOnly(top: 14),
+            SizedBox(height: 8),
             Divider().paddingOnly(right: 12),
             Expanded(child: PeerTabPage()),
           ],
@@ -357,15 +357,15 @@ class _ConnectionPageState extends State<ConnectionPage>
   /// Search for a peer.
   Widget _buildRemoteIDTextField(BuildContext context) {
     var w = Container(
-      width: 320 + 20 * 2,
-      padding: const EdgeInsets.fromLTRB(20, 24, 20, 22),
+      width: 300 + 16 * 2,
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
       decoration: BoxDecoration(
           borderRadius: const BorderRadius.all(Radius.circular(13)),
           border: Border.all(color: Theme.of(context).colorScheme.background)),
       child: Ink(
         child: Column(
           children: [
-            getConnectionPageTitle(context, false).marginOnly(bottom: 15),
+            getConnectionPageTitle(context, false).marginOnly(bottom: 10),
             Row(
               children: [
                 Expanded(
@@ -434,8 +434,8 @@ class _ConnectionPageState extends State<ConnectionPage>
                           focusNode: fieldFocusNode,
                           style: const TextStyle(
                             fontFamily: 'WorkSans',
-                            fontSize: 22,
-                            height: 1.4,
+                            fontSize: 18,
+                            height: 1.3,
                           ),
                           maxLines: 1,
                           cursorColor:
@@ -447,7 +447,7 @@ class _ConnectionPageState extends State<ConnectionPage>
                                   ? null
                                   : translate('Enter Remote ID'),
                               contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 15, vertical: 13)),
+                                  horizontal: 12, vertical: 9)),
                           controller: fieldTextEditingController,
                           inputFormatters: [IDTextInputFormatter()],
                           onChanged: (v) {
@@ -497,7 +497,7 @@ class _ConnectionPageState extends State<ConnectionPage>
                                 child: ConstrainedBox(
                                   constraints: BoxConstraints(
                                     maxHeight: maxHeight,
-                                    maxWidth: 319,
+                                    maxWidth: 299,
                                   ),
                                   child: _allPeersLoader.peers.isEmpty &&
                                           !_allPeersLoader.isPeersLoaded
@@ -529,7 +529,7 @@ class _ConnectionPageState extends State<ConnectionPage>
               ],
             ),
             Padding(
-              padding: const EdgeInsets.only(top: 13.0),
+              padding: const EdgeInsets.only(top: 10.0),
               child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
                 SizedBox(
                   height: 28.0,
@@ -537,7 +537,9 @@ class _ConnectionPageState extends State<ConnectionPage>
                     onPressed: () {
                       onConnect();
                     },
-                    child: Text(translate("Connect")),
+                    child: Text(translate("Connect"),
+                        style: const TextStyle(
+                            fontSize: 14, fontWeight: FontWeight.w600)),
                   ),
                 ),
                 const SizedBox(width: 8),

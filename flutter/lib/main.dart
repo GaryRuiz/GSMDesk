@@ -549,10 +549,12 @@ class _AppState extends State<App> with WidgetsBindingObserver {
   }
 }
 
+/// GSMDesk: every desktop window uses this builder. Text is 15 % smaller than
+/// upstream's, close to the sizes of GSM Redirector. Android has its own builder.
 Widget _keepScaleBuilder(BuildContext context, Widget? child) {
   return MediaQuery(
     data: MediaQuery.of(context).copyWith(
-      textScaler: TextScaler.linear(1.0),
+      textScaler: TextScaler.linear(0.85),
     ),
     child: child ?? Container(),
   );

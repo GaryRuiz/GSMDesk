@@ -16,14 +16,14 @@ Widget getConnectionPageTitle(BuildContext context, bool isWeb) {
             style: Theme.of(context)
                 .textTheme
                 .titleLarge
-                ?.merge(TextStyle(height: 1)),
+                ?.merge(TextStyle(height: 1, fontSize: isDesktop ? 16 : null)),
           ).marginOnly(right: 4),
           Tooltip(
             waitDuration: Duration(milliseconds: 300),
             message: translate(isWeb ? "web_id_input_tip" : "id_input_tip"),
             child: Icon(
               Icons.help_outline_outlined,
-              size: 16,
+              size: isDesktop ? 14 : 16,
               color: Theme.of(context)
                   .textTheme
                   .titleLarge

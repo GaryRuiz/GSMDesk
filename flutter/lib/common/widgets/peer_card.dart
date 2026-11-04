@@ -313,7 +313,7 @@ class _PeerCardState extends State<_PeerCard>
                               Container(
                                 padding: const EdgeInsets.all(6),
                                 child:
-                                    getPlatformImage(peer.platform, size: 60),
+                                    getPlatformImage(peer.platform, size: 44),
                               ),
                               Row(
                                 children: [
