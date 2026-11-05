@@ -38,6 +38,27 @@ class GsmLicense {
 
   static String get key => bind.mainGetLocalOption(key: _kKey);
 
+  /// Days until the licence ends, or null when it is permanent.
+  static int? get daysLeft {
+    final until = DateTime.tryParse(expires.value);
+    if (until == null || plan.value.toLowerCase().contains('lifetime')) {
+      return null;
+    }
+    final now = DateTime.now();
+    return DateTime(until.year, until.month, until.day)
+        .difference(DateTime(now.year, now.month, now.day))
+        .inDays;
+  }
+
+  /// Shown next to the licence: "Permanente", "23 días"...
+  static String get remainingText {
+    final days = daysLeft;
+    if (days == null) return translate('gsm-license-permanent');
+    if (days <= 0) return translate('gsm-license-last-day');
+    if (days == 1) return translate('gsm-license-one-day');
+    return '$days ${translate('gsm-license-days')}';
+  }
+
   /// Loads the cached state, then re-checks with the server now and every
   /// six hours. Without a saved key, uses GSM Redirector's one if this PC has
   /// it. Call once from the main window.

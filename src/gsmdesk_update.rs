@@ -17,7 +17,7 @@ use std::{
 };
 
 /// Keep equal to the `+N` of `version` in flutter/pubspec.yaml.
-pub const BUILD: u64 = 68;
+pub const BUILD: u64 = 69;
 
 const MANIFEST_URL: &str =
     "https://github.com/GaryRuiz/GSMDesk/releases/latest/download/gsmdesk-update.bin";

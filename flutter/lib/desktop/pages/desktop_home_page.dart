@@ -182,11 +182,18 @@ class _DesktopHomePageState extends State<DesktopHomePage>
   Widget buildLicenseChip(BuildContext context) {
     return Obx(() {
       final licensed = GsmLicense.active.value;
-      final color =
-          licensed ? MyTheme.gsmOk(context) : MyTheme.gsmMuted(context);
+      final days = licensed ? GsmLicense.daysLeft : null;
+      final color = !licensed
+          ? MyTheme.gsmMuted(context)
+          : (days != null && days <= 7 ? kColorWarn : MyTheme.gsmOk(context));
       return Tooltip(
-        message:
-            translate(licensed ? 'gsm-license-multi' : 'gsm-license-free-tip'),
+        message: [
+          translate(licensed ? 'gsm-license-multi' : 'gsm-license-free-tip'),
+          if (licensed && GsmLicense.plan.value.isNotEmpty)
+            GsmLicense.plan.value,
+          if (days != null)
+            '${translate('gsm-license-expires')} ${GsmLicense.expires.value}',
+        ].join(' · '),
         child: InkWell(
           borderRadius: BorderRadius.circular(8),
           onTap: GsmLicense.showActivateDialog,
@@ -204,9 +211,9 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                 Icon(Icons.workspace_premium_outlined, size: 14, color: color),
                 const SizedBox(width: 5),
                 Text(
-                  translate(licensed
-                      ? 'gsm-license-active-title'
-                      : 'gsm-license-free-title'),
+                  licensed
+                      ? '${translate('gsm-license-active-title')} · ${GsmLicense.remainingText}'
+                      : translate('gsm-license-free-title'),
                   style: TextStyle(
                       fontSize: 13, fontWeight: FontWeight.w600, color: color),
                 ),
