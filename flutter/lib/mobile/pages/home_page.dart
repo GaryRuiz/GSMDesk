@@ -27,6 +27,7 @@ class HomePage extends StatefulWidget {
 
 class HomePageState extends State<HomePage> {
   var _selectedIndex = 0;
+  late final AppLifecycleListener _lifecycle;
   int get selectedIndex => _selectedIndex;
   final List<PageShape> _pages = [];
   int _chatPageTabIndex = -1;
@@ -45,6 +46,13 @@ class HomePageState extends State<HomePage> {
     super.initState();
     initPages();
     GsmUpdate.start();
+    _lifecycle = AppLifecycleListener(onResume: GsmUpdate.checkOnReopen);
+  }
+
+  @override
+  void dispose() {
+    _lifecycle.dispose();
+    super.dispose();
   }
 
   void initPages() {

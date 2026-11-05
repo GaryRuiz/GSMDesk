@@ -327,8 +327,9 @@ class ToolbarState {
 }
 
 class _ToolbarTheme {
-  static const Color blueColor = MyTheme.button;
-  static const Color hoverBlueColor = MyTheme.accent;
+  // GSMDesk: navy instead of red, which is kept for closing and recording.
+  static const Color blueColor = Color(0xFF1F4E79);
+  static const Color hoverBlueColor = Color(0xFF2A6099);
   static Color inactiveColor = Colors.grey[800]!;
   static Color hoverInactiveColor = Colors.grey[850]!;
 
@@ -339,6 +340,10 @@ class _ToolbarTheme {
   static const double dividerHeight = 12.0;
 
   static const double buttonSize = 32;
+  // GSMDesk: buttons with an icon and its name underneath.
+  static const double labeledButtonWidth = 46;
+  static const double labeledButtonHeight = 38;
+  static const double labeledIconSize = 16;
   static const double buttonHMargin = 2;
   static const double buttonVMargin = 6;
   static const double iconRadius = 8;
@@ -836,6 +841,7 @@ class _RemoteToolbarState extends State<RemoteToolbar> {
       }
     }));
 
+    toolbarItems.add(_PrivacyModeButton(id: widget.id, ffi: widget.ffi));
     toolbarItems
         .add(_ControlMenu(id: widget.id, ffi: widget.ffi, state: widget.state));
     toolbarItems.add(_DisplayMenu(
@@ -854,7 +860,7 @@ class _RemoteToolbarState extends State<RemoteToolbar> {
     }
     if (!isWeb) toolbarItems.add(_RecordMenu());
     toolbarItems.add(_CloseMenu(id: widget.id, ffi: widget.ffi));
-    final toolbarBorderRadius = BorderRadius.all(Radius.circular(4.0));
+    final toolbarBorderRadius = BorderRadius.all(Radius.circular(10.0));
     // innerAxis: how the toolbar icons themselves flow.
     // outerAxis: how the toolbar block and the handle stack against each other
     // (perpendicular to the dock edge, so the handle hangs off the interior face).
@@ -942,7 +948,9 @@ class _PinMenu extends StatelessWidget {
   Widget build(BuildContext context) {
     return Obx(
       () => _IconMenuButton(
-        assetName: state.pin ? "assets/pinned.svg" : "assets/unpinned.svg",
+        label: 'gsm-tb-pin',
+        labelIcon: state.pin ? Icons.push_pin : Icons.push_pin_outlined,
+        foreground: state.pin ? MyTheme.gsmSignal(context) : null,
         tooltip: state.pin ? 'Unpin Toolbar' : 'Pin Toolbar',
         onPressed: state.switchPin,
         color:
@@ -963,7 +971,11 @@ class _MobileActionMenu extends StatelessWidget {
   Widget build(BuildContext context) {
     if (!ffi.ffiModel.isPeerAndroid) return Offstage();
     return Obx(() => _IconMenuButton(
-          assetName: 'assets/actions_mobile.svg',
+          label: 'gsm-tb-mobile',
+          labelIcon: Icons.phone_android_outlined,
+          foreground: ffi.dialogManager.mobileActionsOverlayVisible.isTrue
+              ? MyTheme.gsmSignal(context)
+              : null,
           tooltip: 'Mobile Actions',
           onPressed: () => ffi.dialogManager.setMobileActionsOverlayVisible(
               !ffi.dialogManager.mobileActionsOverlayVisible.value),
@@ -1313,7 +1325,8 @@ class _ControlMenu extends StatelessWidget {
   Widget build(BuildContext context) {
     return _IconSubmenuButton(
         tooltip: 'Control Actions',
-        svg: "assets/actions.svg",
+        label: 'gsm-tb-actions',
+        labelIcon: Icons.bolt_outlined,
         color: _ToolbarTheme.blueColor,
         hoverColor: _ToolbarTheme.hoverBlueColor,
         ffi: ffi,
@@ -1590,7 +1603,8 @@ class _DisplayMenuState extends State<_DisplayMenu> {
 
     return _IconSubmenuButton(
       tooltip: 'Display Settings',
-      svg: "assets/display.svg",
+      label: 'gsm-tb-display',
+      labelIcon: Icons.tune,
       ffi: widget.ffi,
       color: _ToolbarTheme.blueColor,
       hoverColor: _ToolbarTheme.hoverBlueColor,
@@ -2339,7 +2353,8 @@ class _KeyboardMenu extends StatelessWidget {
 
     return _IconSubmenuButton(
         tooltip: 'Keyboard Settings',
-        svg: "assets/keyboard_mouse.svg",
+        label: 'gsm-tb-keyboard',
+        labelIcon: Icons.keyboard_outlined,
         ffi: ffi,
         color: _ToolbarTheme.blueColor,
         hoverColor: _ToolbarTheme.hoverBlueColor,
@@ -2604,7 +2619,8 @@ class _ChatMenuState extends State<_ChatMenu> {
       return _IconSubmenuButton(
           tooltip: 'Chat',
           key: chatButtonKey,
-          svg: 'assets/chat.svg',
+          label: 'gsm-tb-chat',
+          labelIcon: Icons.chat_bubble_outline,
           ffi: widget.ffi,
           color: _ToolbarTheme.blueColor,
           hoverColor: _ToolbarTheme.hoverBlueColor,
@@ -2709,7 +2725,9 @@ class _VoiceCallMenu extends StatelessWidget {
           case VoiceCallStatus.connected:
             return _IconSubmenuButton(
               tooltip: 'Voice call',
-              svg: 'assets/voice_call.svg',
+              label: 'gsm-tb-call',
+              labelIcon: Icons.call_outlined,
+              foreground: MyTheme.gsmOk(context),
               color: _ToolbarTheme.blueColor,
               hoverColor: _ToolbarTheme.hoverBlueColor,
               menuChildrenGetter: menuChildrenGetter,
@@ -2724,7 +2742,9 @@ class _VoiceCallMenu extends StatelessWidget {
 
   Widget buildCallWaiting(BuildContext context) {
     return _IconMenuButton(
-      assetName: "assets/call_wait.svg",
+      label: 'gsm-tb-call',
+      labelIcon: Icons.call_outlined,
+      foreground: MyTheme.accent,
       tooltip: "Waiting",
       onPressed: () => bind.sessionCloseVoiceCall(sessionId: ffi.sessionId),
       color: _ToolbarTheme.redColor,
@@ -2744,7 +2764,11 @@ class _RecordMenu extends StatelessWidget {
         (recordingModel.start || ffi.permissions['recording'] != false);
     if (!visible) return Offstage();
     return _IconMenuButton(
-      assetName: 'assets/rec.svg',
+      label: recordingModel.start ? 'gsm-tb-recording' : 'gsm-tb-record',
+      labelIcon: recordingModel.start
+          ? Icons.fiber_manual_record
+          : Icons.fiber_manual_record_outlined,
+      foreground: recordingModel.start ? MyTheme.accent : null,
       tooltip: recordingModel.start
           ? 'Stop session recording'
           : 'Start session recording',
@@ -2768,7 +2792,9 @@ class _CloseMenu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _IconMenuButton(
-      assetName: 'assets/close.svg',
+      label: 'gsm-tb-close',
+      labelIcon: Icons.close,
+      foreground: MyTheme.accent,
       tooltip: 'Close',
       onPressed: () async {
         if (await showConnEndAuditDialogCloseCanceled(ffi: ffi)) {
@@ -2782,9 +2808,86 @@ class _CloseMenu extends StatelessWidget {
   }
 }
 
+/// GSMDesk: one click blacks out the client's screen with Mode 1, the first
+/// one listed. Mode 2 stays in the display menu.
+class _PrivacyModeButton extends StatelessWidget {
+  final String id;
+  final FFI ffi;
+  const _PrivacyModeButton({Key? key, required this.id, required this.ffi})
+      : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final ffiModel = Provider.of<FfiModel>(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final amber = isDark ? const Color(0xFFF5A524) : const Color(0xFFB45309);
+    return Obx(() {
+      final state = PrivacyModeState.find(id);
+      final on = state.isNotEmpty;
+      if (ffi.connType != ConnType.defaultConn ||
+          !(ffiModel.pi.features.privacyMode || on) ||
+          !(ffiModel.keyboard || on)) {
+        return const Offstage();
+      }
+      final items = toolbarPrivacyMode(state, context, id, ffi);
+      if (items.isEmpty) return const Offstage();
+      final item = on
+          ? items.firstWhere((e) => e.value == true, orElse: () => items.first)
+          : items.first;
+      final onChanged = item.onChanged;
+      return _IconMenuButton(
+        label: on ? 'gsm-tb-black-on' : 'gsm-tb-black',
+        labelIcon: Icons.visibility_off_outlined,
+        width: 70,
+        foreground: on
+            ? (isDark ? const Color(0xFF231703) : Colors.white)
+            : amber,
+        background: on ? amber : amber.withOpacity(0.14),
+        tooltip: on ? 'Exit privacy mode' : 'Enter privacy mode',
+        color: amber,
+        hoverColor: amber,
+        onPressed: onChanged == null ? null : () => onChanged(!on),
+      );
+    });
+  }
+}
+
+/// GSMDesk: icon with its name underneath, for the session toolbar.
+Widget _labeledButtonContent(BuildContext context, IconData icon, String label,
+    double width, Color? foreground) {
+  return SizedBox(
+    width: width,
+    height: _ToolbarTheme.labeledButtonHeight,
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(icon,
+            size: _ToolbarTheme.labeledIconSize,
+            color: foreground ?? Theme.of(context).textTheme.bodyMedium?.color),
+        const SizedBox(height: 3),
+        Text(
+          translate(label),
+          maxLines: 1,
+          softWrap: false,
+          overflow: TextOverflow.clip,
+          style: TextStyle(
+              fontSize: 11,
+              height: 1,
+              fontWeight: FontWeight.normal,
+              color: foreground ?? MyTheme.gsmMuted(context)),
+        ),
+      ],
+    ),
+  );
+}
+
 class _IconMenuButton extends StatefulWidget {
   final String? assetName;
   final Widget? icon;
+  final String? label;
+  final IconData? labelIcon;
+  final Color? foreground;
+  final Color? background;
   final String tooltip;
   final Color color;
   final Color hoverColor;
@@ -2798,9 +2901,13 @@ class _IconMenuButton extends StatefulWidget {
     this.assetName,
     this.icon,
     required this.tooltip,
-    required this.color,
-    required this.hoverColor,
+    this.color = _ToolbarTheme.blueColor,
+    this.hoverColor = _ToolbarTheme.hoverBlueColor,
     required this.onPressed,
+    this.label,
+    this.labelIcon,
+    this.foreground,
+    this.background,
     this.hMargin,
     this.vMargin,
     this.topLevel = true,
@@ -2816,17 +2923,27 @@ class _IconMenuButtonState extends State<_IconMenuButton> {
 
   @override
   Widget build(BuildContext context) {
-    assert(widget.assetName != null || widget.icon != null);
-    final icon = widget.icon ??
-        SvgPicture.asset(
-          widget.assetName!,
-          colorFilter: ColorFilter.mode(Colors.white, BlendMode.srcIn),
-          width: _ToolbarTheme.buttonSize,
-          height: _ToolbarTheme.buttonSize,
-        );
+    final labeled = widget.labelIcon != null;
+    assert(widget.assetName != null || widget.icon != null || labeled);
+    final width = widget.width ??
+        (labeled
+            ? _ToolbarTheme.labeledButtonWidth
+            : _ToolbarTheme.buttonSize);
+    final icon = labeled
+        ? _labeledButtonContent(
+            context, widget.labelIcon!, widget.label!, width, widget.foreground)
+        : widget.icon ??
+            SvgPicture.asset(
+              widget.assetName!,
+              colorFilter: ColorFilter.mode(Colors.white, BlendMode.srcIn),
+              width: _ToolbarTheme.buttonSize,
+              height: _ToolbarTheme.buttonSize,
+            );
     var button = SizedBox(
-      width: widget.width ?? _ToolbarTheme.buttonSize,
-      height: _ToolbarTheme.buttonSize,
+      width: width,
+      height: labeled
+          ? _ToolbarTheme.labeledButtonHeight
+          : _ToolbarTheme.buttonSize,
       child: MenuItemButton(
           style: ButtonStyle(
               backgroundColor: MaterialStatePropertyAll(Colors.transparent),
@@ -2844,13 +2961,18 @@ class _IconMenuButtonState extends State<_IconMenuButton> {
                     decoration: BoxDecoration(
                       borderRadius:
                           BorderRadius.circular(_ToolbarTheme.iconRadius),
-                      color: hover ? widget.hoverColor : widget.color,
+                      color: labeled
+                          ? widget.background ??
+                              (hover
+                                  ? MyTheme.gsmLine(context)
+                                  : Colors.transparent)
+                          : (hover ? widget.hoverColor : widget.color),
                     ),
                     child: icon)),
           )),
     ).marginSymmetric(
-        horizontal: widget.hMargin ?? _ToolbarTheme.buttonHMargin,
-        vertical: widget.vMargin ?? _ToolbarTheme.buttonVMargin);
+        horizontal: widget.hMargin ?? (labeled ? 1 : _ToolbarTheme.buttonHMargin),
+        vertical: widget.vMargin ?? (labeled ? 3 : _ToolbarTheme.buttonVMargin));
     button = Tooltip(
       message: translate(widget.tooltip),
       child: button,
@@ -2867,6 +2989,9 @@ class _IconSubmenuButton extends StatefulWidget {
   final String tooltip;
   final String? svg;
   final Widget? icon;
+  final String? label;
+  final IconData? labelIcon;
+  final Color? foreground;
   final Color color;
   final Color hoverColor;
   final List<Widget> Function(_IconSubmenuButtonState state) menuChildrenGetter;
@@ -2881,6 +3006,9 @@ class _IconSubmenuButton extends StatefulWidget {
     required this.tooltip,
     required this.color,
     required this.hoverColor,
+    this.label,
+    this.labelIcon,
+    this.foreground,
     required this.menuChildrenGetter,
     this.ffi,
     this.menuStyle,
@@ -2901,17 +3029,27 @@ class _IconSubmenuButtonState extends State<_IconSubmenuButton> {
 
   @override
   Widget build(BuildContext context) {
-    assert(widget.svg != null || widget.icon != null);
-    final icon = widget.icon ??
-        SvgPicture.asset(
-          widget.svg!,
-          colorFilter: ColorFilter.mode(Colors.white, BlendMode.srcIn),
-          width: _ToolbarTheme.buttonSize,
-          height: _ToolbarTheme.buttonSize,
-        );
+    final labeled = widget.labelIcon != null;
+    assert(widget.svg != null || widget.icon != null || labeled);
+    final width = widget.width ??
+        (labeled
+            ? _ToolbarTheme.labeledButtonWidth
+            : _ToolbarTheme.buttonSize);
+    final icon = labeled
+        ? _labeledButtonContent(
+            context, widget.labelIcon!, widget.label!, width, widget.foreground)
+        : widget.icon ??
+            SvgPicture.asset(
+              widget.svg!,
+              colorFilter: ColorFilter.mode(Colors.white, BlendMode.srcIn),
+              width: _ToolbarTheme.buttonSize,
+              height: _ToolbarTheme.buttonSize,
+            );
     final button = SizedBox(
-        width: widget.width ?? _ToolbarTheme.buttonSize,
-        height: _ToolbarTheme.buttonSize,
+        width: width,
+        height: labeled
+            ? _ToolbarTheme.labeledButtonHeight
+            : _ToolbarTheme.buttonSize,
         child: SubmenuButton(
             menuStyle:
                 widget.menuStyle ?? _ToolbarTheme.defaultMenuStyle(context),
@@ -2927,7 +3065,11 @@ class _IconSubmenuButtonState extends State<_IconSubmenuButton> {
                         decoration: BoxDecoration(
                           borderRadius:
                               BorderRadius.circular(_ToolbarTheme.iconRadius),
-                          color: hover ? widget.hoverColor : widget.color,
+                          color: labeled
+                              ? (hover
+                                  ? MyTheme.gsmLine(context)
+                                  : Colors.transparent)
+                              : (hover ? widget.hoverColor : widget.color),
                         ),
                         child: icon))),
             menuChildren: widget
@@ -2936,8 +3078,8 @@ class _IconSubmenuButtonState extends State<_IconSubmenuButton> {
                 .toList()));
     return MenuBar(children: [
       button.marginSymmetric(
-          horizontal: _ToolbarTheme.buttonHMargin,
-          vertical: _ToolbarTheme.buttonVMargin)
+          horizontal: labeled ? 1 : _ToolbarTheme.buttonHMargin,
+          vertical: labeled ? 3 : _ToolbarTheme.buttonVMargin)
     ]);
   }
 }

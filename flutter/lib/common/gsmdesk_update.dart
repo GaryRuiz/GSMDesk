@@ -19,6 +19,7 @@ class GsmUpdate {
   static final progress = 0.0.obs;
   static Timer? _checkTimer;
   static Timer? _pollTimer;
+  static DateTime? _lastCheck;
 
   static void start() {
     if (_checkTimer != null || !(isWindows || isAndroid)) return;
@@ -28,7 +29,20 @@ class GsmUpdate {
     _checkTimer = Timer.periodic(const Duration(hours: 6), (_) => _check());
   }
 
+  /// Closing the window leaves the app running, so reopening it would not look
+  /// for updates without this.
+  static void checkOnReopen() {
+    final last = _lastCheck;
+    if (_checkTimer == null ||
+        (last != null &&
+            DateTime.now().difference(last) < const Duration(minutes: 10))) {
+      return;
+    }
+    _check();
+  }
+
   static void _check() {
+    _lastCheck = DateTime.now();
     bind.mainSetCommon(key: 'gsm-update-check', value: '');
     _pollTimer?.cancel();
     _pollTimer = Timer.periodic(const Duration(seconds: 1), (timer) async {

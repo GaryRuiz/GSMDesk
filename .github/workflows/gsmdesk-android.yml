@@ -159,7 +159,7 @@ jobs:
         working-directory: flutter
         run: |
           flutter pub get
-          dart analyze --no-fatal-warnings lib/mobile lib/common/gsmdesk_update.dart lib/common/gsmdesk_license.dart lib/common/widgets/peer_card.dart lib/common.dart lib/desktop/pages/desktop_home_page.dart lib/desktop/pages/connection_page.dart
+          dart analyze --no-fatal-warnings lib/mobile lib/common/gsmdesk_update.dart lib/common/gsmdesk_license.dart lib/common/widgets/peer_card.dart lib/common.dart lib/desktop/pages/desktop_home_page.dart lib/desktop/pages/connection_page.dart lib/desktop/widgets/remote_toolbar.dart
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9 # v1

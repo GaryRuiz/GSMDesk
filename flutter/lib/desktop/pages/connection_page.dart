@@ -17,6 +17,7 @@ import 'package:flutter_hbb/models/peer_model.dart';
 import '../../common.dart';
 import '../../common/formatter/id_formatter.dart';
 import '../../common/widgets/peer_tab_page.dart';
+import '../../common/gsmdesk_update.dart';
 import '../../common/widgets/autocomplete.dart';
 import '../../mobile/widgets/gsm_widgets.dart';
 import '../../models/platform_model.dart';
@@ -294,6 +295,9 @@ class _ConnectionPageState extends State<ConnectionPage>
   @override
   void onWindowEvent(String eventName) {
     super.onWindowEvent(eventName);
+    if (eventName == 'show' || eventName == 'focus') {
+      GsmUpdate.checkOnReopen();
+    }
     if (eventName == 'minimize') {
       isWindowMinimized = true;
     } else if (eventName == 'maximize' || eventName == 'restore') {
